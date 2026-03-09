@@ -40,3 +40,34 @@ def hitung_dcf(fcf_terakhir, growth_rate, discount_rate, terminal_growth, jumlah
     # 4. Harga Wajar per Lembar Saham
     harga_wajar = total_ev / jumlah_saham
     return round(harga_wajar, 2)
+
+def hitung_dcf_pro(fcf_terakhir, growth_rate, horizon):
+    # Mapping horizon (teks) ke Discount Rate (angka)
+    # Long term biasanya minta return lebih rendah (lebih stabil)
+    discount_rates = {"short": 0.15, "mid": 0.12, "long": 0.10}
+    dr = discount_rates.get(horizon, 0.12) # default 12%
+    
+    terminal_growth = 0.03
+    proyeksi_fcf = []
+    
+    curr = fcf_terakhir
+    # Proyeksi 5 tahun ke depan
+    for t in range(1, 6):
+        curr *= (1 + growth_rate)
+        pv = curr / ((1 + dr) ** t)
+        proyeksi_fcf.append(pv)
+        
+    tv = (curr * (1 + terminal_growth)) / (dr - terminal_growth)
+    pv_tv = tv / ((1 + dr) ** 5)
+    
+    return sum(proyeksi_fcf) + pv_tv
+
+def hitung_average_growth(list_fcf):
+    # list_fcf berisi data dari tahun terlama ke terbaru, misal [100, 120, 150]
+    growths = []
+    for i in range(1, len(list_fcf)):
+        growth = (list_fcf[i] - list_fcf[i-1]) / list_fcf[i-1]
+        growths.append(growth)
+    
+    # Rata-rata pertumbuhan
+    return sum(growths) / len(growths) if growths else 0.05 # default 5% jika data cuma 1

@@ -1,12 +1,22 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 from database import Base
 
 class Saham(Base):
-    __tablename__ = "data_saham"
-
+    __tablename__ = "companies"
     id = Column(Integer, primary_key=True, index=True)
     ticker = Column(String, unique=True, index=True)
     nama_emiten = Column(String)
+    
+    # Relasi ke tabel laporan keuangan
+    reports = relationship("FinancialReport", back_populates="owner")
+
+class FinancialReport(Base):
+    __tablename__ = "financial_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    year = Column(Integer)
     fcf = Column(Float)
-    growth = Column(Float)
-    shares = Column(Integer)
+    net_income = Column(Float)
+    saham_id = Column(Integer, ForeignKey("companies.id"))
+    
+    owner = relationship("Saham", back_populates="reports")
