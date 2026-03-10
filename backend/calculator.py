@@ -1,73 +1,53 @@
 import yfinance as yf
+from config import SEKTORAL_SETTINGS, DEFAULT_SETTINGS
 
-def ambil_harga_realtime(ticker):
-    # Tambahkan .JK untuk saham Indonesia (misal: BBCA.JK)
-    if not ticker.endswith(".JK"):
-        ticker_id = f"{ticker}.JK"
-    else:
-        ticker_id = ticker
+def hitung_growth_historis(reports, ticker):
+    sorted_reports = sorted(reports, key=lambda x: x.year)
+    if len(sorted_reports) < 2:
+        return 0.05
+    
+    growths = []
+    for i in range(1, len(sorted_reports)):
+        prev_fcf = sorted_reports[i-1].fcf
+        curr_fcf = sorted_reports[i].fcf
+        if prev_fcf and prev_fcf > 0:
+            growths.append((curr_fcf - prev_fcf) / prev_fcf)
+            
+    if not growths:
+        return 0.05
         
-    stock = yf.Ticker(ticker_id)
-    # Ambil harga penutupan terakhir
-    data = stock.history(period="1d")
-    if not data.empty:
-        return round(data['Close'].iloc[-1], 2)
-    return None
-
-def hitung_dcf(fcf_terakhir, growth_rate, discount_rate, terminal_growth, jumlah_saham):
-    """
-    Rumus DCF Sederhana Proyeksi 5 Tahun
-    """
-    proyeksi_fcf = []
-    present_value_fcf = []
+    avg_growth = sum(growths) / len(growths)
     
-    # 1. Hitung proyeksi FCF 5 tahun ke depan dan tarik ke nilai sekarang (PV)
-    current_fcf = fcf_terakhir
-    for thn in range(1, 6):
-        current_fcf *= (1 + growth_rate)
-        proyeksi_fcf.append(current_fcf)
-        
-        pv = current_fcf / ((1 + discount_rate) ** thn)
-        present_value_fcf.append(pv)
+    # Ambil batas dari config.py
+    conf = SEKTORAL_SETTINGS.get(ticker.upper(), DEFAULT_SETTINGS)
     
-    # 2. Hitung Terminal Value (Nilai sisa setelah tahun ke-5)
-    terminal_value = (proyeksi_fcf[-1] * (1 + terminal_growth)) / (discount_rate - terminal_growth)
-    pv_terminal_value = terminal_value / ((1 + discount_rate) ** 5)
-    
-    # 3. Total Nilai Perusahaan (Enterprise Value)
-    total_ev = sum(present_value_fcf) + pv_terminal_value
-    
-    # 4. Harga Wajar per Lembar Saham
-    harga_wajar = total_ev / jumlah_saham
-    return round(harga_wajar, 2)
+    # Safety Margin: Gunakan 70% dari growth asli, dan jangan lewati max_growth
+    conservative_growth = avg_growth * 0.7
+    return min(conservative_growth, conf['max_growth'])
 
 def hitung_dcf_pro(fcf_terakhir, growth_rate, horizon):
-    # Mapping horizon (teks) ke Discount Rate (angka)
-    # Long term biasanya minta return lebih rendah (lebih stabil)
-    discount_rates = {"short": 0.15, "mid": 0.12, "long": 0.10}
-    dr = discount_rates.get(horizon, 0.12) # default 12%
+    discount_map = {"short": 0.15, "mid": 0.12, "long": 0.10}
+    dr = discount_map.get(horizon, 0.12)
     
-    terminal_growth = 0.03
+    terminal_growth = 0.02
     proyeksi_fcf = []
-    
     curr = fcf_terakhir
-    # Proyeksi 5 tahun ke depan
+    
     for t in range(1, 6):
         curr *= (1 + growth_rate)
-        pv = curr / ((1 + dr) ** t)
-        proyeksi_fcf.append(pv)
+        proyeksi_fcf.append(curr / ((1 + dr) ** t))
         
     tv = (curr * (1 + terminal_growth)) / (dr - terminal_growth)
-    pv_tv = tv / ((1 + dr) ** 5)
-    
-    return sum(proyeksi_fcf) + pv_tv
+    return sum(proyeksi_fcf) + (tv / ((1 + dr) ** 5))
 
-def hitung_average_growth(list_fcf):
-    # list_fcf berisi data dari tahun terlama ke terbaru, misal [100, 120, 150]
-    growths = []
-    for i in range(1, len(list_fcf)):
-        growth = (list_fcf[i] - list_fcf[i-1]) / list_fcf[i-1]
-        growths.append(growth)
-    
-    # Rata-rata pertumbuhan
-    return sum(growths) / len(growths) if growths else 0.05 # default 5% jika data cuma 1
+def hitung_valuasi_per(net_income_terakhir, shares, avg_per):
+    # EPS (Earning Per Share) dikali dengan PER standar sektor
+    return (net_income_terakhir / shares) * avg_per
+
+def ambil_harga_realtime(ticker):
+    try:
+        stock = yf.Ticker(f"{ticker}.JK")
+        data = stock.history(period="1d")
+        return round(data['Close'].iloc[-1], 2) if not data.empty else None
+    except:
+        return None
