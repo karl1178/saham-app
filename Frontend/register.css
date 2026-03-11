@@ -1,0 +1,11 @@
+.letter-spacing-custom {
+    letter-spacing: 0.5rem;
+}
+#sendOtpBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: rgba(255,255,255,0.1);
+}
+#otpWrapper {
+    transition: all 0.3s ease;
+}

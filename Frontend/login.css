@@ -1,0 +1,9 @@
+/* Specific adjustments for login page if any */
+#loginForm .form-control-custom {
+    transition: all 0.3s ease;
+}
+
+/* Add custom animations to inputs */
+#loginForm .form-control-custom:focus {
+    transform: translateY(-1px);
+}
