@@ -2,8 +2,17 @@ from fastapi import FastAPI, Depends, Query
 from sqlalchemy.orm import Session
 import models, database, calculator
 from config import SEKTORAL_SETTINGS, DEFAULT_SETTINGS
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Membuat tabel database otomatis saat startup
 models.Base.metadata.create_all(bind=database.engine)
@@ -26,7 +35,8 @@ def list_saham(db: Session = Depends(get_db)):
 @app.get("/rekomendasi/{ticker}")
 def get_rekomendasi(
     ticker: str, 
-    horizon: str = Query(..., regex="^(short|mid|long)$"), 
+    # Update: 'regex' diganti 'pattern' untuk mengikuti standar FastAPI terbaru
+    horizon: str = Query(..., pattern="^(short|mid|long)$"), 
     shares: int = 1,
     db: Session = Depends(get_db)
 ):
@@ -39,7 +49,7 @@ def get_rekomendasi(
     conf = SEKTORAL_SETTINGS.get(ticker.upper(), DEFAULT_SETTINGS)
     laporan_terbaru = sorted(saham.reports, key=lambda x: x.year)[-1]
     
-    # 2. Hitung Growth Historis (Sudah difilter oleh calculator)
+    # 2. Hitung Growth Historis
     avg_growth = calculator.hitung_growth_historis(saham.reports, ticker)
 
     # 3. Hitung Valuasi dengan 2 Metode
@@ -57,16 +67,25 @@ def get_rekomendasi(
     
     if harga_pasar:
         mos = ((harga_wajar_final - harga_pasar) / harga_wajar_final) * 100
-        if mos > 15: rekomendasi = "BUY"
-        elif mos < 0: rekomendasi = "SELL"
+        
+        if mos >= 30: 
+            rekomendasi = "BUY"
+        elif mos >= 0 and mos < 30: 
+            rekomendasi = "HOLD"
+        elif mos < 0: 
+            rekomendasi = "SELL"
 
     return {
         "ticker": ticker.upper(),
-        "horizon_pilihan": horizon,
+        # PERBAIKAN: Menggunakan 'nama_emiten' sesuai dengan models.py
+        "name": saham.nama_emiten, 
+        "fundamental_raw": {
+            "net_income": laporan_terbaru.net_income,
+            "fcf": laporan_terbaru.fcf,
+            "year": laporan_terbaru.year
+        },
         "analisis": {
             "growth_digunakan": f"{round(avg_growth * 100, 2)}%",
-            "estimasi_harga_dcf": round(harga_dcf, 2),
-            "estimasi_harga_per": round(harga_per, 2),
             "harga_wajar_hybrid": round(harga_wajar_final, 2),
             "harga_pasar_saat_ini": harga_pasar,
             "margin_of_safety": f"{round(mos, 2)}%",

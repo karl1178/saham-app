@@ -18,7 +18,7 @@ def seed():
             models.FinancialReport(year=2021, fcf=30e12, net_income=31.4e12, saham_id=bbca.id),
             models.FinancialReport(year=2022, fcf=36e12, net_income=40.7e12, saham_id=bbca.id),
             models.FinancialReport(year=2023, fcf=44e12, net_income=48.6e12, saham_id=bbca.id),
-            models.FinancialReport(year=2024, fcf=50e12, net_income=53.2e12, saham_id=bbca.id),
+            models.FinancialReport(year=2024, fcf=50e12, net_income=54.8e12, saham_id=bbca.id),
         ]
         db.add_all(laporan_bbca)
 
@@ -30,7 +30,7 @@ def seed():
         db.flush()
 
         laporan_asii = [
-            models.FinancialReport(year=2021, fcf=15e12, net_income=20.1e12, saham_id=asii.id),
+            models.FinancialReport(year=2021, fcf=15e12, net_income=20.2e12, saham_id=asii.id),
             models.FinancialReport(year=2022, fcf=22e12, net_income=28.9e12, saham_id=asii.id),
             models.FinancialReport(year=2023, fcf=25e12, net_income=33.8e12, saham_id=asii.id),
             models.FinancialReport(year=2024, fcf=28e12, net_income=34.0e12, saham_id=asii.id),
@@ -46,7 +46,7 @@ def seed():
             models.FinancialReport(year=2021, fcf=15e12, net_income=10.3e12, saham_id=untr.id),
             models.FinancialReport(year=2022, fcf=20e12, net_income=21.0e12, saham_id=untr.id),
             models.FinancialReport(year=2023, fcf=22e12, net_income=20.6e12, saham_id=untr.id),
-            models.FinancialReport(year=2024, fcf=24e12, net_income=21.5e12, saham_id=untr.id),
+            models.FinancialReport(year=2024, fcf=24e12, net_income=19.5e12, saham_id=untr.id),
         ])
 
     # 4. TLKM (Telkom Indonesia) - Sektor Infrastruktur Telekomunikasi
@@ -55,10 +55,10 @@ def seed():
         tlkm = models.Saham(ticker="TLKM", nama_emiten="Telkom Indonesia")
         db.add(tlkm); db.flush()
         db.add_all([
-            models.FinancialReport(year=2021, fcf=18e12, net_income=24.3e12, saham_id=tlkm.id),
+            models.FinancialReport(year=2021, fcf=18e12, net_income=24.7e12, saham_id=tlkm.id),
             models.FinancialReport(year=2022, fcf=16e12, net_income=20.7e12, saham_id=tlkm.id),
             models.FinancialReport(year=2023, fcf=20e12, net_income=24.5e12, saham_id=tlkm.id),
-            models.FinancialReport(year=2024, fcf=22e12, net_income=25.0e12, saham_id=tlkm.id),
+            models.FinancialReport(year=2024, fcf=22e12, net_income=23.6e12, saham_id=tlkm.id),
         ])
 
     # 5. BBRI (Bank Rakyat Indonesia) - Sektor Perbankan (Micro-Finance)
@@ -68,9 +68,9 @@ def seed():
         db.add(bbri); db.flush()
         db.add_all([
             models.FinancialReport(year=2021, fcf=32e12, net_income=32.2e12, saham_id=bbri.id),
-            models.FinancialReport(year=2022, fcf=45e12, net_income=51.4e12, saham_id=bbri.id),
-            models.FinancialReport(year=2023, fcf=55e12, net_income=60.4e12, saham_id=bbri.id),
-            models.FinancialReport(year=2024, fcf=58e12, net_income=62.0e12, saham_id=bbri.id),
+            models.FinancialReport(year=2022, fcf=45e12, net_income=51.2e12, saham_id=bbri.id),
+            models.FinancialReport(year=2023, fcf=55e12, net_income=60.1e12, saham_id=bbri.id),
+            models.FinancialReport(year=2024, fcf=58e12, net_income=60.1e12, saham_id=bbri.id),
         ])
 
     # 6. ADRO (Adaro Energy) - Sektor Batubara
@@ -80,14 +80,14 @@ def seed():
         db.add(adro); db.flush()
         db.add_all([
             models.FinancialReport(year=2021, fcf=12e12, net_income=13.4e12, saham_id=adro.id),
-            models.FinancialReport(year=2022, fcf=35e12, net_income=38.4e12, saham_id=adro.id),
+            models.FinancialReport(year=2022, fcf=35e12, net_income=38.2e12, saham_id=adro.id),
             models.FinancialReport(year=2023, fcf=25e12, net_income=25.3e12, saham_id=adro.id),
-            models.FinancialReport(year=2024, fcf=20e12, net_income=22.0e12, saham_id=adro.id),
+            models.FinancialReport(year=2024, fcf=20e12, net_income=22.3e12, saham_id=adro.id),
         ])
 
     db.commit()
     db.close()
-    print("✅ Berhasil: Data historis BBCA & ASII masuk ke SQL!")
+    print("✅ Berhasil: Data historis masuk ke SQL!")
 
 if __name__ == "__main__":
     seed()

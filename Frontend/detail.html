@@ -1,166 +1,135 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stock Detail - Saham</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="detail.css">
-</head>
-<body>
-
-    <!-- Header Section -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="detail.css" />
+  </head>
+  <body>
     <div class="container-fluid pt-4 pb-3 sticky-top detail-header detail-header-bg">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-3">
-                    <div>
-                        <h4 class="mb-0 fw-bold d-flex align-items-center gap-2">
-                            <a href="dashboard.html" class="text-white text-decoration-none me-2 d-flex align-items-center" style="color: #f59e0b !important;">
-                                <i class="fa-solid fa-thumbs-up"></i>
-                            </a>
-                            <span id="stockCode">----</span>
-                            <span class="fs-5 text-muted fw-normal d-none d-md-inline" id="stockName">Loading...</span>
-                        </h4>
-                        <div class="d-flex align-items-center gap-2 mt-2">
-                            <span class="fs-5 fw-bold" id="stockPrice">0</span>
-                            <span class="badge" id="stockChangeBadge">0 (0.00%)</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <i class="fa-regular fa-star fs-3 fav-icon-toggle" id="favStar" title="Toggle Favorite"></i>
-                </div>
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center">
+              <h4 class="mb-0 fw-bold d-flex align-items-center gap-2">
+                <a href="dashboard.html" class="text-white text-decoration-none me-2 d-flex align-items-center" style="color: #f59e0b !important">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </a>
+                <span id="stockCode">----</span>
+                <span class="fs-5 text-muted fw-normal d-none d-md-inline" id="stockName">Loading...</span>
+              </h4>
+              <div class="d-flex align-items-center gap-2 ms-4">
+                <span class="fs-5 fw-bold text-white" id="stockPrice">0</span>
+                <span class="badge" id="stockChangeBadge">ANALYZING...</span>
+              </div>
             </div>
-            <!-- Mobile Stock Name -->
-            <p class="text-muted mb-0 mt-2 d-md-none" id="stockNameMobile">Loading...</p>
+          </div>
+          <div>
+            <i class="fa-regular fa-star fs-3 fav-icon-toggle" id="favStar" title="Toggle Favorite"></i>
+          </div>
         </div>
+        <p class="text-muted mb-0 mt-2 d-md-none" id="stockNameMobile">Loading...</p>
+      </div>
     </div>
 
     <div class="container pb-5 mt-4">
-
-        <!-- Line Chart Container -->
-        <div class="glass-card p-3 mb-4">
-            <div class="chart-container" style="height: 300px; width: 100%;">
-                <canvas id="detailChart"></canvas>
-            </div>
+      <div class="glass-card p-3 mb-4">
+        <div class="chart-container" style="height: 300px; width: 100%">
+          <canvas id="detailChart"></canvas>
         </div>
-        
-        <div class="row g-4">
-            <!-- Left Section: Basic Info Cards -->
-            <div class="col-lg-4">
-                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center gap-4">
-                    <div>
-                        <p class="text-muted mb-1 fs-6">Net Income</p>
-                        <h3 class="fw-bold mb-0 text-white" id="netIncome">Rp -- Triliun</h3>
-                    </div>
-                    <div>
-                        <p class="text-muted mb-1 fs-6">Market Cap</p>
-                        <h3 class="fw-bold mb-0 text-white" id="marketCap">Rp -- Triliun</h3>
-                    </div>
-                </div>
-            </div>
+      </div>
 
-            <!-- Right Section: Key Stats Table -->
-            <div class="col-lg-8">
-                <div class="glass-card p-4 h-100">
-                    <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2">Key Stats</h5>
-                    <div class="row row-cols-1 row-cols-md-2 g-3 key-stats-list">
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">PBV (Price to Book Value)</span>
-                            <span class="fw-semibold text-white">2.45x</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">PER (Price to Earnings Ratio)</span>
-                            <span class="fw-semibold text-white">15.2x</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">EPS (Earning Per Share)</span>
-                            <span class="fw-semibold text-white">Rp 450</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">ROE (Return on Equity)</span>
-                            <span class="fw-semibold text-white">18.5%</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">ROA (Return on Assets)</span>
-                            <span class="fw-semibold text-white">4.2%</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">DER (Debt to Equity Ratio)</span>
-                            <span class="fw-semibold text-white">0.85</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">NPM (Net Profit Margin)</span>
-                            <span class="fw-semibold text-white">22.4%</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">GPM (Gross Profit Margin)</span>
-                            <span class="fw-semibold text-white">65.8%</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">Dividend Yield</span>
-                            <span class="fw-semibold text-white">3.5%</span>
-                        </div>
-                        <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
-                            <span class="text-muted">Dividend Payout Ratio</span>
-                            <span class="fw-semibold text-white">45.0%</span>
-                        </div>
-                    </div>
-                </div>
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center gap-4">
+            <div>
+              <p class="text-muted mb-1 fs-6">Harga Wajar (Hybrid DCF/PER)</p>
+              <h3 class="fw-bold mb-0 text-white" id="hargaWajar">Rp --</h3>
             </div>
+            <div>
+              <p class="text-muted mb-1 fs-6">Margin of Safety (MoS)</p>
+              <h3 class="fw-bold mb-0 text-white" id="mosValue">-- %</h3>
+            </div>
+          </div>
         </div>
 
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="glass-card p-4">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-                        <h5 class="fw-bold mb-0">Analysis & Finance</h5>
-                        <a href="https://idx.co.id" target="_blank" class="btn btn-custom-outline">
-                            <i class="fa-solid fa-file-invoice-dollar me-2"></i> Laporan Keuangan
-                        </a>
-                    </div>
-
-                    <!-- Recommendation Table -->
-                    <div class="table-responsive">
-                        <table class="table table-dark table-borderless text-center align-middle mb-0">
-                            <thead class="border-bottom border-secondary text-muted">
-                                <tr>
-                                    <th class="py-3 fw-normal">Short Term</th>
-                                    <th class="py-3 fw-normal">Medium Term</th>
-                                    <th class="py-3 fw-normal">Long Term</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="py-4">
-                                        <span class="recommendation-badge badge-buy">BUY</span>
-                                    </td>
-                                    <td class="py-4">
-                                        <span class="recommendation-badge badge-buy">BUY</span>
-                                    </td>
-                                    <td class="py-4">
-                                        <span class="recommendation-badge badge-sell">SELL</span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="col-lg-8">
+          <div class="glass-card p-4 h-100">
+            <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2">Fundamental Stats (Real-time)</h5>
+            <div class="row row-cols-1 row-cols-md-2 g-3 key-stats-list">
+              <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
+                <span class="text-muted">Net Income (Laba Bersih)</span>
+                <span class="fw-semibold text-white" id="statNetIncome">--</span>
+              </div>
+              <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
+                <span class="text-muted">Free Cash Flow (FCF)</span>
+                <span class="fw-semibold text-white" id="statFCF">--</span>
+              </div>
+              <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
+                <span class="text-muted">Growth yang Digunakan</span>
+                <span class="fw-semibold text-white" id="statGrowth">--</span>
+              </div>
+              <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
+                <span class="text-muted">Data Tahun Terakhir</span>
+                <span class="fw-semibold text-white" id="statYear">--</span>
+              </div>
+              <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
+                <span class="text-muted">Status Fundamental</span>
+                <span class="fw-semibold text-success">Verified</span>
+              </div>
+              <div class="col d-flex justify-content-between border-bottom border-secondary pb-2">
+                <span class="text-muted">Update Source</span>
+                <span class="fw-semibold text-info">FastAPI Backend</span>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="glass-card p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+              <h5 class="fw-bold mb-0">Analysis & Finance Strategy</h5>
+              <a href="https://idx.co.id" target="_blank" class="btn btn-outline-warning btn-sm"> <i class="fa-solid fa-file-invoice-dollar me-2"></i> Sumber Laporan Keuangan </a>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-dark table-borderless text-center align-middle mb-0">
+                <thead class="border-bottom border-secondary text-muted">
+                  <tr>
+                    <th class="py-3 fw-normal">Short Term (PER Based)</th>
+                    <th class="py-3 fw-normal">Medium Term (Hybrid)</th>
+                    <th class="py-3 fw-normal">Long Term (DCF Based)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="py-4">
+                      <span class="recommendation-badge" id="badgeShort">--</span>
+                    </td>
+                    <td class="py-4">
+                      <span class="recommendation-badge" id="badgeMid">--</span>
+                    </td>
+                    <td class="py-4">
+                      <span class="recommendation-badge" id="badgeLong">--</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="storage.js"></script>
-    <script src="script.js"></script>
     <script src="detail.js"></script>
-</body>
+  </body>
 </html>
