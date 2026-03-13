@@ -4,6 +4,8 @@ import models, database, calculator
 from config import SEKTORAL_SETTINGS, DEFAULT_SETTINGS
 from fastapi.middleware.cors import CORSMiddleware
 
+import yfinance as yf
+
 app = FastAPI()
 
 app.add_middleware(
@@ -92,3 +94,30 @@ def get_rekomendasi(
             "rekomendasi_akhir": rekomendasi
         }
     }
+
+@app.get("/ihsg-data")
+def get_ihsg():
+    try:
+        ihsg = yf.Ticker("^JKSE")
+        hist = ihsg.history(period="1d", interval="5m") # Data per 5 menit hari ini
+        
+        if hist.empty:
+            # Fallback jika market tutup/data kosong
+            hist = ihsg.history(period="2d", interval="15m")
+
+        current_price = hist['Close'].iloc[-1]
+        prev_close = ihsg.info.get('previousClose', current_price)
+        change = current_price - prev_close
+        percent_change = (change / prev_close) * 100
+
+        # Ambil data chart untuk grafik sederhana
+        chart_data = hist['Close'].tolist()
+        
+        return {
+            "price": round(current_price, 2),
+            "change": round(change, 2),
+            "percent": round(percent_change, 2),
+            "chart": chart_data
+        }
+    except Exception as e:
+        return {"error": str(e)}

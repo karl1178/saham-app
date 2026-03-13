@@ -1,32 +1,162 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // Dependencies untuk favorite
+  // --- 1. INISIALISASI ---
   let favs = window.getFavorites ? window.getFavorites() : {};
   const stockListContainer = document.getElementById("stockListContainer");
+  const dSearch = document.getElementById("desktopSearch");
+  const mSearch = document.getElementById("mobileSearch");
 
+  // --- 2. FUNGSI LOAD DATA IHSG ---
+  async function loadIHSG() {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/ihsg-data");
+      const data = await response.json();
+
+      if (data.error) return;
+
+      const priceEl = document.getElementById("ihsgPrice");
+      const changeEl = document.getElementById("ihsgChange");
+
+      if (priceEl) priceEl.innerText = data.price.toLocaleString("id-ID");
+
+      if (changeEl) {
+        const sign = data.change >= 0 ? "+" : "";
+        changeEl.innerText = `${sign}${data.change} (${sign}${data.percent}%)`;
+        changeEl.className = `badge ${data.change >= 0 ? "bg-success" : "bg-danger"}`;
+      }
+
+      // Panggil fungsi render untuk canvas besar
+      renderIHSGMainChart(data.chart, data.change >= 0);
+    } catch (e) {
+      console.error("Gagal memuat data IHSG:", e);
+    }
+  }
+
+  function renderIHSGMainChart(chartData, isUp) {
+    const canvas = document.getElementById("ihsgMainChart");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const color = isUp ? "#10b981" : "#ef4444";
+
+    const existingChart = Chart.getChart("ihsgMainChart");
+    if (existingChart) existingChart.destroy();
+
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: chartData.map((_, i) => i),
+        datasets: [
+          {
+            data: chartData,
+            borderColor: color,
+            borderWidth: 3, // Lebih tebal untuk kartu besar
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: (context) => {
+              const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+              gradient.addColorStop(0, isUp ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)");
+              gradient.addColorStop(1, "transparent");
+              return gradient;
+            },
+            tension: 0.4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            grid: { color: "rgba(255,255,255,0.05)" },
+            ticks: { color: "rgba(255,255,255,0.5)", font: { size: 10 } },
+          },
+        },
+      },
+    });
+  }
+
+  // --- 3. FUNGSI RENDER GRAFIK MINI IHSG ---
+  function renderIHSGMiniChart(chartData, isUp) {
+    const canvas = document.getElementById("ihsgMiniChart");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const color = isUp ? "#10b981" : "#ef4444";
+
+    // Hancurkan chart lama agar tidak tumpang tindih saat refresh data
+    const existingChart = Chart.getChart("ihsgMiniChart");
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: chartData.map((_, i) => i),
+        datasets: [
+          {
+            data: chartData,
+            borderColor: color,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            fill: true,
+            backgroundColor: (context) => {
+              const gradient = ctx.createLinearGradient(0, 0, 0, 60);
+              gradient.addColorStop(0, isUp ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)");
+              gradient.addColorStop(1, "transparent");
+              return gradient;
+            },
+            tension: 0.4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+        },
+        scales: {
+          x: { display: false },
+          y: {
+            display: false,
+            suggestedMin: Math.min(...chartData) * 0.999,
+            suggestedMax: Math.max(...chartData) * 1.001,
+          },
+        },
+      },
+    });
+  }
+
+  // Jalankan load IHSG saat startup
+  loadIHSG();
+
+  // --- 4. LOGIKA DAFTAR SAHAM & SEARCH ---
   try {
-    // --- 1. FETCH DAFTAR SAHAM DARI BACKEND ---
-    stockListContainer.innerHTML = '<p class="text-center py-4">Memuat data dari server...</p>';
+    stockListContainer.innerHTML = '<p class="text-center py-4 text-muted">Memuat data dari server...</p>';
 
     const response = await fetch("http://127.0.0.1:8000/daftar-saham");
-    const dbSaham = await response.json(); // Array dari SQL Database kita
+    const dbSaham = await response.json();
 
-    // 2. Petakan data SQL ke format array yang dibaca oleh UI kita
+    // Mapping data dari backend ke format array UI
     let stocksArray = dbSaham.map((saham) => {
       return {
         code: saham.ticker,
-        name: saham.name || "Perusahaan Terbuka",
-        color: "#10b981", // Default warna
-        price: "Cek Detail", // Harga real-time ditarik di halaman detail
+        name: saham.nama_emiten || "Perusahaan Terbuka",
+        color: "#10b981",
         change: "Analisis",
-        isUp: true,
         favState: favs[saham.ticker] || 0,
       };
     });
 
-    // Sorting Favorite
+    // Urutkan berdasarkan favorite
     stocksArray.sort((a, b) => b.favState - a.favState);
 
-    // 3. Fungsi Render List
+    // Fungsi Render List Saham ke HTML
     function renderList(list) {
       stockListContainer.innerHTML = "";
       if (list.length === 0) {
@@ -40,46 +170,45 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (stock.favState === 2) favIconClass = "fa-solid fa-star";
 
         const stockHTML = `
-                    <a href="detail.html?code=${stock.code}" class="stock-item text-decoration-none">
-                        <div class="d-flex align-items-center">
-                            <div class="stock-icon m-0 me-3" style="background-color: ${stock.color}40; color: ${stock.color}; border: 1px solid ${stock.color}80; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold;">
-                                ${stock.code.charAt(0)}
-                            </div>
-                            <div class="stock-info">
-                                <div class="d-flex align-items-center gap-2">
-                                    <h6 class="stock-code mb-0" style="color: white;">${stock.code}</h6>
-                                    ${stock.favState !== 0 ? `<i class="${favIconClass} favorite-icon m-0 text-warning"></i>` : ""}
-                                </div>
-                                <p class="stock-company text-muted mb-0" style="font-size: 0.8rem;">${stock.name}</p>
-                            </div>
-                        </div>
-                        <div class="stock-price-info text-end">
-                            <span class="badge bg-primary px-3 py-2 rounded">${stock.change}</span>
-                        </div>
-                    </a>
-                    <hr style="border-color: #333; margin: 10px 0;">
-                `;
+          <a href="detail.html?code=${stock.code}" class="stock-item text-decoration-none">
+            <div class="d-flex align-items-center">
+              <div class="stock-icon m-0 me-3" style="background-color: ${stock.color}40; color: ${stock.color}; border: 1px solid ${stock.color}80; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold;">
+                ${stock.code.charAt(0)}
+              </div>
+              <div class="stock-info">
+                <div class="d-flex align-items-center gap-2">
+                  <h6 class="stock-code mb-0" style="color: white;">${stock.code}</h6>
+                  ${stock.favState !== 0 ? `<i class="${favIconClass} favorite-icon m-0 text-warning"></i>` : ""}
+                </div>
+                <p class="stock-company text-muted mb-0" style="font-size: 0.8rem;">${stock.name}</p>
+              </div>
+            </div>
+            <div class="stock-price-info text-end">
+              <span class="badge bg-primary px-3 py-2 rounded">${stock.change}</span>
+            </div>
+          </a>
+          <hr style="border-color: #333; margin: 10px 0;">
+        `;
         stockListContainer.innerHTML += stockHTML;
       });
     }
 
+    // Inisialisasi list pertama kali
     renderList(stocksArray);
 
-    // 4. Filter Logic (Search)
-    const dSearch = document.getElementById("desktopSearch");
-    const mSearch = document.getElementById("mobileSearch");
-
-    function applyFilter(e) {
+    // Logika Pencarian
+    function applySearch(e) {
       const term = e.target.value.toLowerCase();
-      if (e.target.id === "desktopSearch" && mSearch) mSearch.value = term;
-      else if (dSearch) dSearch.value = term;
+      // Sinkronisasi input antara desktop dan mobile search
+      if (e.target.id === "desktopSearch" && mSearch) mSearch.value = e.target.value;
+      if (e.target.id === "mobileSearch" && dSearch) dSearch.value = e.target.value;
 
       const filtered = stocksArray.filter((s) => s.code.toLowerCase().includes(term) || s.name.toLowerCase().includes(term));
       renderList(filtered);
     }
 
-    if (dSearch) dSearch.addEventListener("input", applyFilter);
-    if (mSearch) mSearch.addEventListener("input", applyFilter);
+    if (dSearch) dSearch.addEventListener("input", applySearch);
+    if (mSearch) mSearch.addEventListener("input", applySearch);
   } catch (error) {
     console.error("Gagal load data list saham:", error);
     stockListContainer.innerHTML = '<p class="text-danger text-center py-4">Gagal terhubung ke Database Backend.</p>';

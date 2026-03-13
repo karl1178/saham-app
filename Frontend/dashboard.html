@@ -1,89 +1,101 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - Saham</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dashboard.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
     <!-- Dashboard Navbar -->
     <nav class="navbar navbar-expand-lg fixed-top glass-nav">
-        <div class="container-fluid px-4">
-            <!-- Left: Logo -->
-            <a class="navbar-brand brand-logo m-0" href="dashboard.html">
-                <i class="fa-solid fa-thumbs-up"></i>
-            </a>
+      <div class="container-fluid px-4">
+        <!-- Left: Logo -->
+        <a class="navbar-brand brand-logo m-0" href="dashboard.html">
+          <i class="fa-solid fa-thumbs-up"></i>
+        </a>
 
-            <!-- Search Bar -->
-            <div class="mx-auto search-container d-none d-lg-block w-50" style="max-width: 500px;">
-                <div class="input-group">
-                    <span class="input-group-text search-icon-bg border-0">
-                        <i class="fa fa-search text-muted"></i>
-                    </span>
-                    <input type="text" id="desktopSearch" class="form-control search-input border-0" placeholder="Search symbol or company name...">
-                </div>
-            </div>
-
-            <!-- Right: Logout -->
-            <div class="d-flex align-items-center">
-                <a href="index.html" class="logout-btn fs-4" title="Logout">
-                    <i class="fa-solid fa-arrow-right-from-bracket text-danger"></i>
-                </a>
-            </div>
+        <!-- Search Bar -->
+        <div class="mx-auto search-container d-none d-lg-block w-50" style="max-width: 500px">
+          <div class="input-group">
+            <span class="input-group-text search-icon-bg border-0">
+              <i class="fa fa-search text-muted"></i>
+            </span>
+            <input type="text" id="desktopSearch" class="form-control search-input border-0" placeholder="Search symbol or company name..." />
+          </div>
         </div>
+
+        <!-- Right: Logout -->
+        <div class="d-flex align-items-center">
+          <a href="index.html" class="logout-btn fs-4" title="Logout">
+            <i class="fa-solid fa-arrow-right-from-bracket text-danger"></i>
+          </a>
+        </div>
+      </div>
     </nav>
-    
+
     <!-- Mobile Search -->
     <div class="container-fluid mt-5 pt-4 d-block d-lg-none">
-        <div class="input-group mx-auto">
-            <span class="input-group-text search-icon-bg border-0">
-                <i class="fa fa-search text-muted"></i>
-            </span>
-            <input type="text" id="mobileSearch" class="form-control search-input border-0" placeholder="Search...">
-        </div>
+      <div class="input-group mx-auto">
+        <span class="input-group-text search-icon-bg border-0">
+          <i class="fa fa-search text-muted"></i>
+        </span>
+        <input type="text" id="mobileSearch" class="form-control search-input border-0" placeholder="Search..." />
+      </div>
     </div>
 
     <div class="container mt-5 pt-3 pb-5">
-        <!-- Top Chart Section (Favorite #1) -->
-        <a id="topFavLink" href="#" class="text-decoration-none d-block mb-4 top-fav-card p-3 rounded-4 glass-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div id="topFavIcon" class="stock-icon m-0" style="width: 48px; height: 48px; font-size: 1.4rem;">
-                        -
-                    </div>
-                    <div>
-                        <h4 class="mb-0 fw-bold d-flex align-items-center gap-2 text-white">
-                            <span id="topFavCode">----</span>
-                        </h4>
-                        <p class="mb-0 text-muted small" id="topFavName">---</p>
-                    </div>
-                </div>
-                <div class="text-end">
-                    <div class="fs-4 fw-bold text-white" id="topFavPrice">0</div>
-                    <span class="badge" id="topFavBadge">0 (0.00%)</span>
-                </div>
+      <div class="glass-card p-4 mb-4 rounded-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-4">
+            <div>
+              <p class="text-muted mb-1 small text-uppercase fw-bold">Market Index</p>
+              <h4 class="mb-0 fw-bold text-white">IHSG <span class="fw-normal text-muted fs-6">Composite</span></h4>
             </div>
-            
-            <div class="chart-container" style="height: 220px;">
-                <canvas id="topChart"></canvas>
+            <div class="vr d-none d-md-block" style="height: 40px; opacity: 0.1"></div>
+            <div>
+              <h3 class="fw-bold mb-0 text-white" id="ihsgPrice">0.00</h3>
+              <span id="ihsgChange" class="badge">---</span>
             </div>
-        </a>
-
-        <!-- Stock List Section -->
-        <div class="mb-4">
-            <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2">Trending Stocks</h5>
-            <div class="stock-list" id="stockListContainer">
-                <!-- Stock items will be rendered here by JS -->
-            </div>
+          </div>
+          <div class="d-none d-sm-block" style="width: 150px; height: 60px">
+            <canvas id="ihsgMiniChart"></canvas>
+          </div>
         </div>
+      </div>
+
+      <div class="text-decoration-none d-block mb-4 top-fav-card p-3 rounded-4 glass-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="stock-icon m-0 bg-primary bg-opacity-25 text-primary" style="width: 48px; height: 48px; font-size: 1.4rem; border: 1px solid rgba(13, 110, 253, 0.5)">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div>
+              <h4 class="mb-0 fw-bold d-flex align-items-center gap-2 text-white">IHSG <span class="fs-6 text-muted fw-normal">Composite</span></h4>
+              <p class="mb-0 text-muted small">Indeks Harga Saham Gabungan</p>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="fs-4 fw-bold text-white" id="ihsgPrice">0.00</div>
+            <span class="badge" id="ihsgChange">0.00 (0.00%)</span>
+          </div>
+        </div>
+
+        <div class="chart-container" style="height: 220px">
+          <canvas id="ihsgMainChart"></canvas>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2">Trending Stocks</h5>
+        <div class="stock-list" id="stockListContainer"></div>
+      </div>
     </div>
 
     <!-- Scripts -->
@@ -92,5 +104,5 @@
     <script src="storage.js"></script>
     <script src="script.js"></script>
     <script src="dashboard.js"></script>
-</body>
+  </body>
 </html>

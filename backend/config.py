@@ -4,7 +4,7 @@ SEKTORAL_SETTINGS = {
     "BBCA": {
         "per_standard": 22, 
         "weight_dcf": 0.5, 
-        "max_growth": 0.12
+        "max_growth": 0.50
     },
     "BBRI": {
         "per_standard": 15, 
