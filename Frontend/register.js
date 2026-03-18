@@ -1,107 +1,93 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const registerForm = document.getElementById('registerForm');
-    const username = document.getElementById('username');
-    const email = document.getElementById('email');
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirmPassword');
-    const sendOtpBtn = document.getElementById('sendOtpBtn');
-    const otpWrapper = document.getElementById('otpWrapper');
-    const otpCode = document.getElementById('otpCode');
-    const registerBtn = document.getElementById('registerBtn');
-    const otpHelpText = document.getElementById('otpHelpText');
+document.addEventListener("DOMContentLoaded", () => {
+  const registerForm = document.getElementById("registerForm");
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const confirmPassword = document.getElementById("confirmPassword");
+  const sendOtpBtn = document.getElementById("sendOtpBtn");
+  const otpWrapper = document.getElementById("otpWrapper");
+  const otpCodeInput = document.getElementById("otpCode");
+  const registerBtn = document.getElementById("registerBtn");
 
-    let isOtpSent = false;
-    let isOtpVerified = false;
+  // Fungsi validasi email
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 
-    function checkFormValidity() {
-        const uVal = username.value.trim();
-        const eVal = email.value.trim();
-        const pVal = password.value;
-        const cpVal = confirmPassword.value;
+  function validateInputs() {
+    const isOk = isValidEmail(emailInput.value) && passwordInput.value.length >= 6 && passwordInput.value === confirmPassword.value;
+    sendOtpBtn.disabled = !isOk;
+  }
 
-        let emailValid = isValidEmail(eVal);
-        let passwordValid = pVal.length >= 6;
-        let matchValid = pVal === cpVal && pVal !== '';
-        
-        // Show/hide feedback visually
-        if(eVal !== '' && !emailValid) {
-            email.classList.add('is-invalid');
-        } else {
-            email.classList.remove('is-invalid');
-        }
+  [emailInput, passwordInput, confirmPassword].forEach((i) => i.addEventListener("input", validateInputs));
 
-        if(cpVal !== '' && !matchValid) {
-            confirmPassword.classList.add('is-invalid');
-        } else {
-            confirmPassword.classList.remove('is-invalid');
-        }
+  // --- 1. PROSES KIRIM OTP ---
+  sendOtpBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
 
-        const canSendOtp = uVal !== '' && emailValid && passwordValid && matchValid;
+    sendOtpBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+    sendOtpBtn.disabled = true;
 
-        if (!isOtpSent) {
-            sendOtpBtn.disabled = !canSendOtp;
-            if (canSendOtp) {
-                otpHelpText.innerText = "All rules met. You can now send an OTP.";
-                otpHelpText.classList.add("text-success");
-                otpHelpText.classList.remove("text-muted");
-            } else {
-                otpHelpText.innerText = "Please fill all fields correctly to send OTP.";
-                otpHelpText.classList.remove("text-success");
-                otpHelpText.classList.add("text-muted");
-            }
-        }
+    try {
+      const response = await fetch("http://127.0.0.1:8000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailInput.value, password: passwordInput.value }),
+      });
+
+      if (response.ok) {
+        localStorage.setItem("pending_email", emailInput.value);
+
+        // MUNCULKAN TEMPAT OTP
+        otpWrapper.classList.add("show"); // Paksa muncul
+        sendOtpBtn.innerText = "OTP Sent!";
+        sendOtpBtn.className = "btn btn-success w-100 mb-3";
+
+        // Lock input agar tidak berubah
+        [emailInput, passwordInput, confirmPassword].forEach((i) => (i.readOnly = true));
+      } else {
+        const data = await response.json();
+        alert(data.detail || "Gagal kirim OTP");
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.innerText = "Send OTP to Email";
+      }
+    } catch (error) {
+      alert("Koneksi ke server gagal!");
+      sendOtpBtn.disabled = false;
     }
+  });
 
-    // Attach listeners
-    const inputs = [username, email, password, confirmPassword];
-    inputs.forEach(input => {
-        input.addEventListener('input', checkFormValidity);
-    });
+  // Aktifkan tombol daftar jika OTP 6 digit
+  otpCodeInput.addEventListener("input", () => {
+    registerBtn.disabled = otpCodeInput.value.length < 6;
+  });
 
-    // Send OTP logic
-    sendOtpBtn.addEventListener('click', () => {
-        sendOtpBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
-        sendOtpBtn.disabled = true;
+  // --- 2. PROSES VERIFIKASI ---
+  registerBtn.addEventListener("click", async () => {
+    registerBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Verifying...';
+    registerBtn.disabled = true;
 
-        setTimeout(() => {
-            isOtpSent = true;
-            sendOtpBtn.innerText = "OTP Sent!";
-            sendOtpBtn.classList.replace('btn-custom-outline', 'btn-success');
-            
-            // Show OTP section (simulating collapse behavior)
-            otpWrapper.classList.remove('collapse');
-            otpWrapper.classList.add('show');
-            
-            otpHelpText.innerText = "Please check your email for the 4-digit code.";
+    try {
+      const response = await fetch("http://127.0.0.1:8000/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: localStorage.getItem("pending_email"),
+          otp: otpCodeInput.value.trim(),
+        }),
+      });
 
-            // Lock upper inputs
-            inputs.forEach(input => input.readOnly = true);
-
-        }, 1000);
-    });
-
-    // Validasi OTP realtime untuk sign up
-    otpCode.addEventListener('input', () => {
-        if(otpCode.value.length === 4 && isOtpSent) {
-            registerBtn.disabled = false;
-        } else {
-            registerBtn.disabled = true;
-        }
-    });
-
-    registerForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        if (otpCode.value === '1234') { 
-            // example real verification logic
-        }
-
-        registerBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Creating account...';
-        registerBtn.disabled = true;
-
-        setTimeout(() => {
-            alert("Account successfully created! Please log in.");
-            window.location.href = "login.html";
-        }, 1500);
-    });
+      if (response.ok) {
+        alert("Akun Aktif! Silakan Login.");
+        window.location.href = "login.html";
+      } else {
+        const data = await response.json();
+        alert(data.detail || "OTP Salah");
+        registerBtn.disabled = false;
+        registerBtn.innerText = "Sign Up & Verify";
+      }
+    } catch (err) {
+      alert("Kesalahan koneksi.");
+      registerBtn.disabled = false;
+    }
+  });
 });

@@ -1,5 +1,16 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // --- 1. INISIALISASI ---
+  // --- 1. INISIALISASI & PROTEKSI ADMIN ---
+  const user = JSON.parse(localStorage.getItem("user"));
+  const adminLink = document.getElementById("adminLink");
+
+  // Logika Munculkan Tombol Admin
+  if (user && user.email === "admin@gmail.com") {
+    if (adminLink) {
+      adminLink.classList.remove("d-none");
+      console.log("Admin akses diberikan.");
+    }
+  }
+
   let favs = window.getFavorites ? window.getFavorites() : {};
   const stockListContainer = document.getElementById("stockListContainer");
   const dSearch = document.getElementById("desktopSearch");
@@ -24,13 +35,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         changeEl.className = `badge ${data.change >= 0 ? "bg-success" : "bg-danger"}`;
       }
 
-      // Panggil fungsi render untuk canvas besar
-      renderIHSGMainChart(data.chart, data.change >= 0);
+      // Render Chart Utama (Besar)
+      if (data.chart) {
+        renderIHSGMainChart(data.chart, data.change >= 0);
+      }
     } catch (e) {
       console.error("Gagal memuat data IHSG:", e);
     }
   }
 
+  // --- 3. RENDER CHART UTAMA (BESAR) ---
   function renderIHSGMainChart(chartData, isUp) {
     const canvas = document.getElementById("ihsgMainChart");
     if (!canvas) return;
@@ -49,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           {
             data: chartData,
             borderColor: color,
-            borderWidth: 3, // Lebih tebal untuk kartu besar
+            borderWidth: 3,
             pointRadius: 0,
             fill: true,
             backgroundColor: (context) => {
@@ -65,7 +79,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+        },
         scales: {
           x: { display: false },
           y: {
@@ -77,72 +93,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // --- 3. FUNGSI RENDER GRAFIK MINI IHSG ---
-  function renderIHSGMiniChart(chartData, isUp) {
-    const canvas = document.getElementById("ihsgMiniChart");
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    const color = isUp ? "#10b981" : "#ef4444";
-
-    // Hancurkan chart lama agar tidak tumpang tindih saat refresh data
-    const existingChart = Chart.getChart("ihsgMiniChart");
-    if (existingChart) {
-      existingChart.destroy();
-    }
-
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: chartData.map((_, i) => i),
-        datasets: [
-          {
-            data: chartData,
-            borderColor: color,
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 0,
-            fill: true,
-            backgroundColor: (context) => {
-              const gradient = ctx.createLinearGradient(0, 0, 0, 60);
-              gradient.addColorStop(0, isUp ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)");
-              gradient.addColorStop(1, "transparent");
-              return gradient;
-            },
-            tension: 0.4,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { enabled: false },
-        },
-        scales: {
-          x: { display: false },
-          y: {
-            display: false,
-            suggestedMin: Math.min(...chartData) * 0.999,
-            suggestedMax: Math.max(...chartData) * 1.001,
-          },
-        },
-      },
-    });
-  }
-
   // Jalankan load IHSG saat startup
   loadIHSG();
 
   // --- 4. LOGIKA DAFTAR SAHAM & SEARCH ---
   try {
-    stockListContainer.innerHTML = '<p class="text-center py-4 text-muted">Memuat data dari server...</p>';
+    if (stockListContainer) {
+      stockListContainer.innerHTML = '<p class="text-center py-4 text-muted">Memuat data dari server...</p>';
+    }
 
     const response = await fetch("http://127.0.0.1:8000/daftar-saham");
     const dbSaham = await response.json();
 
-    // Mapping data dari backend ke format array UI
     let stocksArray = dbSaham.map((saham) => {
       return {
         code: saham.ticker,
@@ -153,12 +115,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
     });
 
-    // Urutkan berdasarkan favorite
     stocksArray.sort((a, b) => b.favState - a.favState);
 
-    // Fungsi Render List Saham ke HTML
     function renderList(list) {
+      if (!stockListContainer) return;
       stockListContainer.innerHTML = "";
+
       if (list.length === 0) {
         stockListContainer.innerHTML = '<p class="text-muted text-center py-4">Saham tidak ditemukan.</p>';
         return;
@@ -193,13 +155,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // Inisialisasi list pertama kali
     renderList(stocksArray);
 
-    // Logika Pencarian
     function applySearch(e) {
       const term = e.target.value.toLowerCase();
-      // Sinkronisasi input antara desktop dan mobile search
       if (e.target.id === "desktopSearch" && mSearch) mSearch.value = e.target.value;
       if (e.target.id === "mobileSearch" && dSearch) dSearch.value = e.target.value;
 
@@ -211,6 +170,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (mSearch) mSearch.addEventListener("input", applySearch);
   } catch (error) {
     console.error("Gagal load data list saham:", error);
-    stockListContainer.innerHTML = '<p class="text-danger text-center py-4">Gagal terhubung ke Database Backend.</p>';
+    if (stockListContainer) {
+      stockListContainer.innerHTML = '<p class="text-danger text-center py-4">Gagal terhubung ke Database Backend.</p>';
+    }
+  }
+
+  // --- LOGIKA LOGOUT ---
+  const logoutBtn = document.querySelector(".logout-btn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", (e) => {
+      e.preventDefault(); // Mencegah pindah halaman instan
+
+      // Hapus data user dari localStorage
+      localStorage.removeItem("user");
+
+      // Beri efek loading sebentar biar keren
+      logoutBtn.innerHTML = '<i class="fa fa-spinner fa-spin text-danger"></i>';
+
+      setTimeout(() => {
+        window.location.href = "login.html"; // Lempar balik ke login
+      }, 800);
+    });
   }
 });
