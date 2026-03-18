@@ -2,6 +2,10 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from datetime import datetime
+import random
+
 class Saham(Base):
     __tablename__ = "companies"
     id = Column(Integer, primary_key=True, index=True)
@@ -20,3 +24,12 @@ class FinancialReport(Base):
     saham_id = Column(Integer, ForeignKey("companies.id"))
     
     owner = relationship("Saham", back_populates="reports")
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    is_active = Column(Boolean, default=False)  # Status awal tidak aktif
+    otp_code = Column(String, nullable=True)     # Tempat simpan 6 digit OTP
+    created_at = Column(DateTime, default=datetime.utcnow) # Waktu daftar
