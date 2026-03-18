@@ -42,10 +42,15 @@
                 <!-- Password Input -->
                 <div class="mb-4">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control form-control-custom" id="password"
-                        placeholder="Enter your password" required>
-                    <div class="invalid-feedback" id="passwordError">
-                        Password cannot be empty.
+                    <div class="input-group has-validation password-group">
+                        <input type="password" class="form-control form-control-custom hide-validation-icon border-end-0" id="password"
+                            placeholder="Enter your password" required>
+                        <span class="input-group-text custom-addon border-start-0" style="cursor: pointer;" id="togglePasswordBtn">
+                            <i class="fa-regular fa-eye-slash toggle-password"></i>
+                        </span>
+                        <div class="invalid-feedback" id="passwordError">
+                            Password cannot be empty.
+                        </div>
                     </div>
                 </div>
 

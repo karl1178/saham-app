@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const np = newPassword.value;
         const cp = confirmPassword.value;
 
-        if (np.length < 6) {
+        if (np.length < 8) {
             newPassword.classList.add('is-invalid');
             return;
         }
@@ -128,4 +128,22 @@ document.addEventListener('DOMContentLoaded', () => {
             pwdMatchError.style.display = 'none';
         });
     });
+
+    // Toggle Password Visibility
+    function setupToggle(btnId, inputId) {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if (btn && input) {
+            btn.addEventListener("click", function () {
+                const type = input.getAttribute("type") === "password" ? "text" : "password";
+                input.setAttribute("type", type);
+                const icon = this.querySelector("i");
+                icon.classList.toggle("fa-eye");
+                icon.classList.toggle("fa-eye-slash");
+            });
+        }
+    }
+
+    setupToggle("toggleNewPasswordBtn", "newPassword");
+    setupToggle("toggleConfirmPasswordBtn", "confirmPassword");
 });

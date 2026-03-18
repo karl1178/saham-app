@@ -39,21 +39,39 @@
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
             <input type="text" class="form-control form-control-custom" id="username" placeholder="john_doe" required />
+            <div class="invalid-feedback" id="usernameError">Username is required.</div>
           </div>
 
           <div class="mb-3">
             <label for="email" class="form-label">Email Address</label>
             <input type="email" class="form-control form-control-custom" id="email" placeholder="name@example.com" required />
+            <div class="invalid-feedback" id="emailError">Please enter a valid email address.</div>
           </div>
 
           <div class="mb-3">
             <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control form-control-custom" id="password" placeholder="Min. 6 characters" required />
+            <div class="input-group has-validation password-group">
+              <input type="password" class="form-control form-control-custom hide-validation-icon border-end-0" id="password" placeholder="Min. 8 characters" required />
+              <span class="input-group-text custom-addon border-start-0" style="cursor: pointer;" id="togglePasswordBtn">
+                  <i class="fa-regular fa-eye-slash toggle-password"></i>
+              </span>
+              <div class="invalid-feedback" id="passwordError">
+                Password must be at least 8 characters.
+              </div>
+            </div>
           </div>
 
           <div class="mb-4">
             <label for="confirmPassword" class="form-label">Confirm Password</label>
-            <input type="password" class="form-control form-control-custom" id="confirmPassword" placeholder="Match your password" required />
+            <div class="input-group has-validation password-group">
+              <input type="password" class="form-control form-control-custom hide-validation-icon border-end-0" id="confirmPassword" placeholder="Match your password" required />
+              <span class="input-group-text custom-addon border-start-0" style="cursor: pointer;" id="toggleConfirmPasswordBtn">
+                  <i class="fa-regular fa-eye-slash toggle-password"></i>
+              </span>
+              <div class="invalid-feedback" id="confirmPasswordError">
+                Passwords do not match.
+              </div>
+            </div>
           </div>
 
           <div class="mb-4 text-center">

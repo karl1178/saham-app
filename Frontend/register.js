@@ -8,17 +8,91 @@ document.addEventListener("DOMContentLoaded", () => {
   const otpCodeInput = document.getElementById("otpCode");
   const registerBtn = document.getElementById("registerBtn");
 
+  const usernameInput = document.getElementById("username");
+
   // Fungsi validasi email
   function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  function validateInputs() {
-    const isOk = isValidEmail(emailInput.value) && passwordInput.value.length >= 6 && passwordInput.value === confirmPassword.value;
-    sendOtpBtn.disabled = !isOk;
+  function checkUsername() {
+    if (usernameInput.value.trim() === "") {
+      usernameInput.classList.add("is-invalid");
+      return false;
+    } else {
+      usernameInput.classList.remove("is-invalid");
+      return true;
+    }
   }
 
-  [emailInput, passwordInput, confirmPassword].forEach((i) => i.addEventListener("input", validateInputs));
+  function checkEmail() {
+    if (!isValidEmail(emailInput.value.trim())) {
+      emailInput.classList.add("is-invalid");
+      return false;
+    } else {
+      emailInput.classList.remove("is-invalid");
+      return true;
+    }
+  }
+
+  function checkPassword() {
+    if (passwordInput.value.length < 8) {
+      passwordInput.classList.add("is-invalid");
+      return false;
+    } else {
+      passwordInput.classList.remove("is-invalid");
+      return true;
+    }
+  }
+
+  function checkConfirmPassword() {
+    if (confirmPassword.value !== passwordInput.value || confirmPassword.value === "") {
+      confirmPassword.classList.add("is-invalid");
+      return false;
+    } else {
+      confirmPassword.classList.remove("is-invalid");
+      return true;
+    }
+  }
+
+  function validateInputs() {
+    const uOk = usernameInput.value.trim() !== "";
+    const eOk = isValidEmail(emailInput.value.trim());
+    const pOk = passwordInput.value.length >= 8;
+    const cpOk = confirmPassword.value === passwordInput.value && confirmPassword.value !== "";
+    sendOtpBtn.disabled = !(uOk && eOk && pOk && cpOk);
+  }
+
+  [usernameInput, emailInput, passwordInput, confirmPassword].forEach((i) => {
+    i.addEventListener("input", validateInputs);
+  });
+
+  usernameInput.addEventListener("input", checkUsername);
+  usernameInput.addEventListener("blur", checkUsername);
+  emailInput.addEventListener("input", checkEmail);
+  emailInput.addEventListener("blur", checkEmail);
+  passwordInput.addEventListener("input", () => { checkPassword(); if (confirmPassword.value) checkConfirmPassword(); });
+  passwordInput.addEventListener("blur", checkPassword);
+  confirmPassword.addEventListener("input", checkConfirmPassword);
+  confirmPassword.addEventListener("blur", checkConfirmPassword);
+
+  // Toggle Password Visibility
+  function setupToggle(btnId, inputId) {
+    const btn = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    if (btn && input) {
+      btn.addEventListener("click", function () {
+        const type = input.getAttribute("type") === "password" ? "text" : "password";
+        input.setAttribute("type", type);
+        const icon = this.querySelector("i");
+        icon.classList.toggle("fa-eye");
+        icon.classList.toggle("fa-eye-slash");
+      });
+    }
+  }
+
+  setupToggle("togglePasswordBtn", "password");
+  setupToggle("toggleConfirmPasswordBtn", "confirmPassword");
 
   // --- 1. PROSES KIRIM OTP ---
   sendOtpBtn.addEventListener("click", async (e) => {
