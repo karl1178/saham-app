@@ -316,16 +316,40 @@ def get_rekomendasi(
 
 
 # --- 4. DATA IHSG ---
+# --- 4. DATA IHSG ---
 @app.get("/ihsg-data")
-def get_ihsg():
+def get_ihsg(range: str = "1d"): # Tambahkan parameter range
     try:
         ihsg = yf.Ticker("^JKSE")
-        hist = ihsg.history(period="1d", interval="5m")
+        
+        # Logika Filter Waktu (Timeframe) ala Aplikasi Trading
+        if range == "10m":
+            hist = ihsg.history(period="1d", interval="1m").tail(10)
+            fmt = '%H:%M'
+        elif range == "1h":
+            hist = ihsg.history(period="1d", interval="5m").tail(12) # 12 data x 5m = 60 menit
+            fmt = '%H:%M'
+        elif range == "4h":
+            hist = ihsg.history(period="1d", interval="15m").tail(16) # 16 data x 15m = 4 jam
+            fmt = '%H:%M'
+        elif range == "1d":
+            hist = ihsg.history(period="1d", interval="5m")
+            fmt = '%H:%M'
+        elif range == "1w":
+            hist = ihsg.history(period="5d", interval="1h")
+            fmt = '%d %b %H:%M'
+        elif range == "ytd":
+            hist = ihsg.history(period="ytd", interval="1d")
+            fmt = '%d %b'
+        else:
+            hist = ihsg.history(period="1d", interval="5m")
+            fmt = '%H:%M'
+
         if hist.empty:
-            hist = ihsg.history(period="2d", interval="15m")
+            return {"error": "Data kosong dari server Yahoo Finance."}
 
         current_price = hist['Close'].iloc[-1]
-        prev_close = ihsg.info.get('previousClose', current_price)
+        prev_close = hist['Close'].iloc[0] # Dibandingkan dengan harga di AWAL grafik yang dipilih
         change = current_price - prev_close
         percent_change = (change / prev_close) * 100
         
@@ -333,11 +357,11 @@ def get_ihsg():
             "price": round(current_price, 2),
             "change": round(change, 2),
             "percent": round(percent_change, 2),
-            "chart": hist['Close'].tolist()
+            "chart": hist['Close'].tolist(),
+            "labels": hist.index.strftime(fmt).tolist() # Mengirim waktu/tanggal ke Frontend
         }
     except Exception as e:
         return {"error": str(e)}
-    
 
 # --- TAMBAHAN UNTUK FITUR ADMIN (EDIT, DELETE, GET REPORT) ---
 
