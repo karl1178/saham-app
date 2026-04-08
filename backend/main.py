@@ -322,25 +322,28 @@ def get_ihsg(range: str = "1d"): # Tambahkan parameter range
     try:
         ihsg = yf.Ticker("^JKSE")
         
-        # Logika Filter Waktu (Timeframe) ala Aplikasi Trading
-        if range == "10m":
-            hist = ihsg.history(period="1d", interval="1m").tail(10)
-            fmt = '%H:%M'
-        elif range == "1h":
-            hist = ihsg.history(period="1d", interval="5m").tail(12) # 12 data x 5m = 60 menit
-            fmt = '%H:%M'
-        elif range == "4h":
-            hist = ihsg.history(period="1d", interval="15m").tail(16) # 16 data x 15m = 4 jam
-            fmt = '%H:%M'
-        elif range == "1d":
+        # Logika Filter Waktu (Timeframe)
+        if range == "1d":
             hist = ihsg.history(period="1d", interval="5m")
             fmt = '%H:%M'
         elif range == "1w":
-            hist = ihsg.history(period="5d", interval="1h")
+            hist = ihsg.history(period="5d", interval="15m")
             fmt = '%d %b %H:%M'
-        elif range == "ytd":
-            hist = ihsg.history(period="ytd", interval="1d")
+        elif range == "1m":
+            hist = ihsg.history(period="1mo", interval="1d")
             fmt = '%d %b'
+        elif range == "3m":
+            hist = ihsg.history(period="3mo", interval="1d")
+            fmt = '%d %b'
+        elif range == "1y":
+            hist = ihsg.history(period="1y", interval="1d")
+            fmt = '%b %Y'
+        elif range == "5y":
+            hist = ihsg.history(period="5y", interval="1wk")
+            fmt = '%Y'
+        elif range == "all":
+            hist = ihsg.history(period="max", interval="1mo")
+            fmt = '%Y'
         else:
             hist = ihsg.history(period="1d", interval="5m")
             fmt = '%H:%M'
@@ -408,3 +411,57 @@ def hapus_laporan(report_id: int, db: Session = Depends(get_db)):
 #     db.query(models.User).delete()
 #     db.commit()
 #     return {"message": "Seluruh data User berhasil dikosongkan. Data Saham dan FCF kamu tetap AMAN!"}
+
+
+# --- 5. DATA CHART PER SAHAM (Dengan Filter Waktu) ---
+@app.get("/chart/{ticker}")
+def get_stock_chart(ticker: str, range: str = "1d"):
+    try:
+        # PENTING: Yahoo Finance butuh akhiran ".JK" untuk saham Indonesia (misal: BBCA.JK)
+        ticker_yf = f"{ticker.upper()}.JK"
+        saham = yf.Ticker(ticker_yf)
+        
+        # Logika Timeframe yang sama dengan IHSG
+        if range == "1d":
+            hist = saham.history(period="1d", interval="5m")
+            fmt = '%H:%M'
+        elif range == "1w":
+            hist = saham.history(period="5d", interval="15m")
+            fmt = '%d %b %H:%M'
+        elif range == "1m":
+            hist = saham.history(period="1mo", interval="1d")
+            fmt = '%d %b'
+        elif range == "3m":
+            hist = saham.history(period="3mo", interval="1d")
+            fmt = '%d %b'
+        elif range == "1y":
+            hist = saham.history(period="1y", interval="1d")
+            fmt = '%b %Y'
+        elif range == "5y":
+            hist = saham.history(period="5y", interval="1wk")
+            fmt = '%Y'
+        elif range == "all":
+            hist = saham.history(period="max", interval="1mo")
+            fmt = '%Y'
+        else:
+            hist = saham.history(period="1d", interval="5m")
+            fmt = '%H:%M'
+
+        if hist.empty:
+            return {"error": f"Data chart untuk {ticker} tidak tersedia saat ini."}
+
+        current_price = hist['Close'].iloc[-1]
+        prev_close = hist['Close'].iloc[0]
+        change = current_price - prev_close
+        percent_change = (change / prev_close) * 100
+        
+        return {
+            "ticker": ticker.upper(),
+            "price": round(current_price, 2),
+            "change": round(change, 2),
+            "percent": round(percent_change, 2),
+            "chart": hist['Close'].tolist(),
+            "labels": hist.index.strftime(fmt).tolist()
+        }
+    except Exception as e:
+        return {"error": str(e)}
