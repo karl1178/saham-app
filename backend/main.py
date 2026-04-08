@@ -13,6 +13,9 @@ from email.message import EmailMessage
 
 import bcrypt
 
+import os
+from dotenv import load_dotenv
+
 app = FastAPI()
 
 # Middleware agar Frontend bisa mengakses API
@@ -45,9 +48,12 @@ def verify_password(plain_password: str, hashed_password: str):
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 
-# --- KONFIGURASI EMAIL ---
-EMAIL_ADDRESS = "saham.app123@gmail.com" 
-EMAIL_PASSWORD = "nrfebniwhcrumsle" 
+# Load file .env
+load_dotenv()
+
+# Ambil dari environment variables
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 def kirim_otp_email(ke_email, otp):
     msg = EmailMessage()
