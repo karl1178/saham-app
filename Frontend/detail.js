@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const code = (urlParams.get("code") || "BBCA").toUpperCase();
 
   // --- 2. LOGIKA SHARES (JUMLAH SAHAM BEREDAR) ---
-  // Penentu akurasi Harga Wajar per lembar
   const sharesMap = {
     ASII: 40483000000,
     BBCA: 123275000000,
@@ -32,63 +31,98 @@ document.addEventListener("DOMContentLoaded", async () => {
     UNTR: 3730000000,
     ADRO: 31985000000,
   };
+  const currentShares = sharesMap[code] || 1000000000;
 
-  const currentShares = sharesMap[code] || 1000000000; // Default jika ticker tidak ada di map
+  // --- 3. LOAD DATA FUNDAMENTAL & REKOMENDASI ---
+  async function loadFundamental() {
+    try {
+      stockPriceEl.innerText = "Loading...";
 
-  // --- 3. PROSES FETCH DATA DARI BACKEND ---
-  try {
-    stockPriceEl.innerText = "Loading...";
+      const response = await fetch(`http://127.0.0.1:8000/rekomendasi/${code}?horizon=mid&shares=${currentShares}`);
+      const data = await response.json();
 
-    // Sekarang shares dikirim secara dinamis sesuai ticker
-    const response = await fetch(`http://127.0.0.1:8000/rekomendasi/${code}?horizon=mid&shares=${currentShares}`);
-    const data = await response.json();
+      if (data.error) {
+        alert("Data fundamental tidak ditemukan: " + data.error);
+        stockPriceEl.innerText = "N/A";
+        return;
+      }
 
-    if (data.error) {
-      alert("Data tidak ditemukan: " + data.error);
-      stockPriceEl.innerText = "N/A";
-      return;
+      const an = data.analisis;
+      const raw = data.fundamental_raw;
+
+      // Header Info
+      stockCodeEl.innerText = data.ticker;
+      stockNameEl.innerText = data.name;
+      stockNameMobileEl.innerText = data.name;
+
+      // Jika harga real-time tersedia di API, pakai itu
+      stockPriceEl.innerText = "Rp " + an.harga_pasar_saat_ini.toLocaleString("id-ID");
+
+      // Badge Utama (Header)
+      stockChangeBadge.innerText = an.rekomendasi_akhir;
+      updateBadgeStyle(stockChangeBadge, an.rekomendasi_akhir);
+
+      // Valuasi Hybrid (Left Card)
+      hargaWajarEl.innerText = "Rp " + an.harga_wajar_hybrid.toLocaleString("id-ID");
+      mosValueEl.innerText = an.margin_of_safety;
+
+      // Fundamental Stats (Right Card)
+      statNetIncome.innerText = "Rp " + raw.net_income.toLocaleString("id-ID");
+      statFCF.innerText = "Rp " + raw.fcf.toLocaleString("id-ID");
+      statGrowth.innerText = an.growth_digunakan;
+      statYear.innerText = raw.year;
+
+      // Tabel Rekomendasi (Short, Mid, Long)
+      [badgeShort, badgeMid, badgeLong].forEach((badge) => {
+        badge.innerText = an.rekomendasi_akhir;
+        updateBadgeStyle(badge, an.rekomendasi_akhir, true);
+      });
+    } catch (error) {
+      console.error("Gagal konek ke backend fundamental:", error);
+      stockPriceEl.innerText = "Backend Offline";
     }
-
-    const an = data.analisis;
-    const raw = data.fundamental_raw;
-
-    // --- 4. INJEKSI DATA KE UI ---
-
-    // Header Info
-    stockCodeEl.innerText = data.ticker;
-    stockNameEl.innerText = data.name;
-    stockNameMobileEl.innerText = data.name;
-    stockPriceEl.innerText = "Rp " + an.harga_pasar_saat_ini.toLocaleString("id-ID");
-
-    // Badge Utama (Header)
-    stockChangeBadge.innerText = an.rekomendasi_akhir;
-    updateBadgeStyle(stockChangeBadge, an.rekomendasi_akhir);
-
-    // Valuasi Hybrid (Left Card) - Sekarang hasilnya akan logis
-    hargaWajarEl.innerText = "Rp " + an.harga_wajar_hybrid.toLocaleString("id-ID");
-    mosValueEl.innerText = an.margin_of_safety;
-
-    // Fundamental Stats (Right Card)
-    statNetIncome.innerText = "Rp " + raw.net_income.toLocaleString("id-ID");
-    statFCF.innerText = "Rp " + raw.fcf.toLocaleString("id-ID");
-    statGrowth.innerText = an.growth_digunakan;
-    statYear.innerText = raw.year;
-
-    // Tabel Rekomendasi (Short, Mid, Long)
-    [badgeShort, badgeMid, badgeLong].forEach((badge) => {
-      badge.innerText = an.rekomendasi_akhir;
-      updateBadgeStyle(badge, an.rekomendasi_akhir, true);
-    });
-
-    // Render Grafik
-    renderChart(an.harga_pasar_saat_ini, an.rekomendasi_akhir === "BUY");
-  } catch (error) {
-    console.error("Gagal konek ke backend:", error);
-    stockPriceEl.innerText = "Backend Offline";
   }
 
-  // --- 5. FUNGSI HELPER ---
+  // --- 4. LOAD DATA GRAFIK REAL-TIME (BARU) ---
+  async function loadChartData(range = "1d") {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/chart/${code}?range=${range}`);
+      const data = await response.json();
 
+      if (data.error) {
+        console.error("Grafik Error:", data.error);
+        return;
+      }
+
+      const isUp = data.change >= 0;
+      // Panggil fungsi render menggunakan data ASLI dari API
+      renderChart(data.chart, data.labels, isUp);
+    } catch (error) {
+      console.error("Gagal load grafik saham:", error);
+    }
+  }
+
+  // Jalankan kedua fungsi secara bersamaan saat halaman dimuat
+  loadFundamental();
+  loadChartData("1d");
+
+  // --- 5. EVENT LISTENER TOMBOL TIMEFRAME ---
+  document.querySelectorAll(".chart-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      // 1. Reset style semua tombol
+      document.querySelectorAll(".chart-filter-btn").forEach((b) => {
+        b.classList.remove("text-primary", "fw-bold");
+        b.classList.add("text-muted");
+      });
+      // 2. Aktifkan style tombol yang diklik
+      e.target.classList.remove("text-muted");
+      e.target.classList.add("text-primary", "fw-bold");
+      // 3. Panggil API dengan range baru
+      loadChartData(e.target.dataset.range);
+    });
+  });
+
+  // --- 6. FUNGSI HELPER UI ---
   function updateBadgeStyle(el, rekomendasi, isTable = false) {
     el.className = isTable ? "recommendation-badge" : "badge px-3 py-1";
     if (rekomendasi === "BUY") {
@@ -100,24 +134,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  function renderChart(basePrice, isUp) {
+  function renderChart(chartData, labelsData, isUp) {
     const ctx = document.getElementById("detailChart").getContext("2d");
     const chartColor = isUp ? "#10b981" : "#ef4444";
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
     gradient.addColorStop(0, `${chartColor}40`);
     gradient.addColorStop(1, `${chartColor}00`);
 
-    const dummyData = [basePrice * 0.98, basePrice * 0.99, basePrice * 1.01, basePrice * 1.02, basePrice * 1.04, basePrice * 1.01, basePrice * 0.99, basePrice * 1.02, basePrice * 1.05, basePrice * 1.03, basePrice * 1.01, basePrice];
-    const labels = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00", "16:00"];
+    // Hapus grafik lama jika ada
+    const existingChart = Chart.getChart("detailChart");
+    if (existingChart) existingChart.destroy();
 
     new Chart(ctx, {
       type: "line",
       data: {
-        labels: labels,
+        labels: labelsData, // Waktu dinamis dari Backend
         datasets: [
           {
             label: code,
-            data: dummyData,
+            data: chartData, // Harga dinamis dari Backend
             borderColor: chartColor,
             backgroundColor: gradient,
             borderWidth: 2,
@@ -131,16 +166,34 @@ document.addEventListener("DOMContentLoaded", async () => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            callbacks: {
+              label: function (context) {
+                return "Rp " + context.parsed.y.toLocaleString("id-ID");
+              },
+            },
+          },
+        },
         scales: {
-          x: { grid: { display: false }, ticks: { color: "rgba(255,255,255,0.5)" } },
-          y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "rgba(255,255,255,0.5)" } },
+          x: {
+            display: true,
+            grid: { display: false },
+            ticks: { color: "rgba(255,255,255,0.4)", maxTicksLimit: 6 },
+          },
+          y: {
+            grid: { color: "rgba(255,255,255,0.05)" },
+            ticks: { color: "rgba(255,255,255,0.5)" },
+          },
         },
       },
     });
   }
 
-  // --- 6. LOGIKA FAVORITE ---
+  // --- 7. LOGIKA FAVORITE ---
   const favs = window.getFavorites ? window.getFavorites() : {};
   let favState = favs[code] || 0;
 

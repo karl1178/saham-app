@@ -31,10 +31,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const dSearch = document.getElementById("desktopSearch");
   const mSearch = document.getElementById("mobileSearch");
 
-  // --- 3. FUNGSI LOAD DATA IHSG ---
-  async function loadIHSG() {
+  // --- 3. FUNGSI LOAD DATA IHSG (Dengan Parameter Range) ---
+  async function loadIHSG(range = "1d") {
     try {
-      const response = await fetch("http://127.0.0.1:8000/ihsg-data");
+      // Tembak API beserta pilihan range-nya
+      const response = await fetch(`http://127.0.0.1:8000/ihsg-data?range=${range}`);
       const data = await response.json();
 
       if (data.error) return;
@@ -50,17 +51,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         changeEl.className = `badge ${data.change >= 0 ? "bg-success" : "bg-danger"}`;
       }
 
-      // Render Chart Utama (Besar)
-      if (data.chart) {
-        renderIHSGMainChart(data.chart, data.change >= 0);
+      // Render Chart Utama
+      if (data.chart && data.labels) {
+        renderIHSGMainChart(data.chart, data.labels, data.change >= 0);
       }
     } catch (e) {
       console.error("Gagal memuat data IHSG:", e);
     }
   }
 
-  // --- 4. RENDER CHART UTAMA (BESAR) ---
-  function renderIHSGMainChart(chartData, isUp) {
+  // --- 4. RENDER CHART UTAMA (Dengan Tanggal/Waktu) ---
+  function renderIHSGMainChart(chartData, labelsData, isUp) {
     const canvas = document.getElementById("ihsgMainChart");
     if (!canvas) return;
 
@@ -73,13 +74,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     new Chart(ctx, {
       type: "line",
       data: {
-        labels: chartData.map((_, i) => i),
+        labels: labelsData, // Sekarang pakai waktu asli dari Backend!
         datasets: [
           {
             data: chartData,
             borderColor: color,
             borderWidth: 3,
             pointRadius: 0,
+            pointHoverRadius: 6, // Titik muncul saat disorot mouse
             fill: true,
             backgroundColor: (context) => {
               const gradient = ctx.createLinearGradient(0, 0, 0, 220);
@@ -96,9 +98,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            callbacks: {
+              label: function (context) {
+                return "Rp " + context.parsed.y.toLocaleString("id-ID");
+              },
+            },
+          },
         },
         scales: {
-          x: { display: false },
+          x: {
+            display: true, // Tampilkan waktu di bawah grafik
+            grid: { display: false },
+            ticks: { color: "rgba(255,255,255,0.4)", maxTicksLimit: 6 }, // Batasi jumlah label agar tidak sesak
+          },
           y: {
             grid: { color: "rgba(255,255,255,0.05)" },
             ticks: { color: "rgba(255,255,255,0.5)", font: { size: 10 } },
@@ -108,8 +123,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Jalankan load IHSG saat startup
-  loadIHSG();
+  // EVENT LISTENER UNTUK TOMBOL TIMEFRAME
+  document.querySelectorAll(".chart-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      // 1. Reset warna semua tombol
+      document.querySelectorAll(".chart-filter-btn").forEach((b) => {
+        b.classList.remove("text-primary", "fw-bold");
+        b.classList.add("text-muted");
+      });
+
+      // 2. Warnai biru tombol yang diklik
+      e.target.classList.remove("text-muted");
+      e.target.classList.add("text-primary", "fw-bold");
+
+      // 3. Ambil range dan panggil ulang data
+      const selectedRange = e.target.dataset.range;
+      loadIHSG(selectedRange);
+    });
+  });
+
+  // Jalankan load IHSG saat startup (Default 1 Hari)
+  loadIHSG("1d");
 
   // --- 5. LOGIKA DAFTAR SAHAM & SEARCH ---
   try {

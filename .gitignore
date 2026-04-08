@@ -1,0 +1,25 @@
+# --- DATABASE ---
+# Kita tidak mau database lokal kita (saham.db) masuk ke GitHub
+# agar data user dan laporan keuangan tidak bocor/tertimpa.
+*.db
+*.sqlite3
+saham.db
+
+# --- PYTHON ---
+# Mengabaikan file sampah yang otomatis dibuat Python saat dijalankan
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# --- IDE & SYSTEM ---
+# Mengabaikan pengaturan VS Code atau file sampah OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- SECRET ---
+# Jika nanti kamu memindahkan password ke file .env (sangat disarankan)
+.env

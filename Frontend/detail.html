@@ -38,7 +38,16 @@
 
     <div class="container pb-5 mt-4">
       <div class="glass-card p-3 mb-4">
-        <div class="chart-container" style="height: 300px; width: 100%">
+        <div class="d-flex justify-content-end gap-2 mb-3">
+          <button class="btn btn-sm text-primary fw-bold chart-filter-btn" data-range="1d">1D</button>
+          <button class="btn btn-sm text-muted chart-filter-btn" data-range="1w">1W</button>
+          <button class="btn btn-sm text-muted chart-filter-btn" data-range="1m">1M</button>
+          <button class="btn btn-sm text-muted chart-filter-btn" data-range="3m">3M</button>
+          <button class="btn btn-sm text-muted chart-filter-btn" data-range="1y">1Y</button>
+          <button class="btn btn-sm text-muted chart-filter-btn" data-range="5y">5Y</button>
+          <button class="btn btn-sm text-muted chart-filter-btn" data-range="all">ALL</button>
+        </div>
+        <div class="chart-container" style="height: 300px; width: 100%; position: relative">
           <canvas id="detailChart"></canvas>
         </div>
       </div>
