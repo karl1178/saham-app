@@ -1,86 +1,97 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // alert("HALO! JS YANG BARU SUDAH JALAN!"); ini debug
+
   const loginForm = document.getElementById("loginForm");
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
+  const loginBtn = document.getElementById("loginBtn");
 
-  loginForm.addEventListener("submit", function (e) {
-    e.preventDefault();
+  // Tangkap elemen tombol mata (eye icon)
+  const togglePasswordBtn = document.getElementById("togglePasswordBtn");
 
-    let isValid = true;
+  // Kunci form agar tidak bisa refresh otomatis
+  if (loginForm) {
+    loginForm.onsubmit = (e) => {
+      e.preventDefault();
+      return false;
+    };
+  }
 
-    // Reset states
-    emailInput.classList.remove("is-invalid");
-    passwordInput.classList.remove("is-invalid");
+  // --- FITUR SHOW/HIDE PASSWORD ---
+  if (togglePasswordBtn) {
+    togglePasswordBtn.addEventListener("click", () => {
+      const icon = togglePasswordBtn.querySelector("i");
 
-    const emailVal = emailInput.value.trim();
-    const pwdVal = passwordInput.value.trim();
+      // Cek tipe input saat ini
+      if (passwordInput.type === "password") {
+        passwordInput.type = "text"; // Tampilkan password
+        icon.classList.replace("fa-eye-slash", "fa-eye"); // Ganti ikon
+      } else {
+        passwordInput.type = "password"; // Sembunyikan password
+        icon.classList.replace("fa-eye", "fa-eye-slash"); // Ganti ikon kembali
+      }
+    });
+  }
 
-    // Email validation
-    if (!emailVal || !isValidEmail(emailVal)) {
-      emailInput.classList.add("is-invalid");
-      isValid = false;
-    }
+  // --- FITUR LOGIN (TEMBAK API) ---
+  if (loginBtn) {
+    loginBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    // Password validation
-    if (!pwdVal) {
-      passwordInput.classList.add("is-invalid");
-      isValid = false;
-    }
+      const emailVal = emailInput.value.trim();
+      const passwordVal = passwordInput.value;
 
-    if (isValid) {
-      // Simpan Session User ---
-      const userSession = {
-        email: emailVal,
-        loginTime: new Date().getTime(),
-      };
-      localStorage.setItem("user", JSON.stringify(userSession));
-      // ----------------------------------------------
-
-      // Dummy login check for admin
-      if (emailVal === "admin@gmail.com" && pwdVal === "admin123") {
-        const btn = loginForm.querySelector('button[type="submit"]');
-        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Logging in...';
-        btn.disabled = true;
-
-        setTimeout(() => {
-          window.location.href = "dashboard.html";
-        }, 1000);
+      // Validasi input kosong
+      if (!emailVal || !passwordVal) {
+        alert("Harap isi email dan password!");
         return;
       }
 
-      // Regular successful form submission
-      const btn = loginForm.querySelector('button[type="submit"]');
-      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Logging in...';
-      btn.disabled = true;
+      // Ubah tombol jadi loading
+      const originalText = loginBtn.innerText;
+      loginBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memeriksa...';
+      loginBtn.disabled = true;
 
-      setTimeout(() => {
-        window.location.href = "dashboard.html"; // Ubah ke dashboard agar seragam
-      }, 1000);
-    }
-  });
+      try {
+        // Tembak API Backend
+        const response = await fetch("http://127.0.0.1:8000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: emailVal,
+            password: passwordVal,
+          }),
+        });
 
-  // Realtime validation UX
-  emailInput.addEventListener("input", () => {
-    if (isValidEmail(emailInput.value.trim())) {
-      emailInput.classList.remove("is-invalid");
-    }
-  });
+        const data = await response.json();
 
-  passwordInput.addEventListener("input", () => {
-    if (passwordInput.value.trim() !== "") {
-      passwordInput.classList.remove("is-invalid");
-    }
-  });
+        if (response.ok) {
+          // LOGIN BERHASIL
+          localStorage.setItem("user_email", data.email);
+          localStorage.setItem("is_logged_in", "true");
 
-  // Toggle Password Visibility
-  const togglePasswordBtn = document.getElementById("togglePasswordBtn");
-  if (togglePasswordBtn) {
-    togglePasswordBtn.addEventListener("click", function () {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      const icon = this.querySelector("i");
-      icon.classList.toggle("fa-eye");
-      icon.classList.toggle("fa-eye-slash");
+          // Pindah ke halaman utama/dashboard
+          window.location.href = "dashboard.html";
+        } else {
+          // LOGIN GAGAL (Salah password atau belum aktif)
+          alert("Gagal Login: " + (data.detail || "Terjadi kesalahan."));
+
+          // Jika errornya karena belum aktif
+          if (data.detail && data.detail.includes("belum aktif")) {
+            localStorage.setItem("pending_email", emailVal);
+            // window.location.href = "register.html"; // Aktifkan jika mau dilempar ke register lagi
+          }
+
+          loginBtn.innerHTML = originalText;
+          loginBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error("Login Error:", error);
+        alert("Tidak bisa terhubung ke server. Pastikan Uvicorn jalan!");
+        loginBtn.innerHTML = originalText;
+        loginBtn.disabled = false;
+      }
     });
   }
 });

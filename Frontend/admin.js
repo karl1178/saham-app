@@ -1,61 +1,169 @@
-document.getElementById("adminForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+document.addEventListener("DOMContentLoaded", async () => {
+  // --- 1. PENJAGA PINTU VIP (Hanya Admin yang boleh masuk) ---
+  const userEmail = localStorage.getItem("user_email");
+  if (userEmail !== "karlferdinan1@gmail.com") {
+    alert("Akses Ilegal! Anda bukan Admin.");
+    window.location.href = "dashboard.html"; // Tendang keluar
+    return;
+  }
 
-  const ticker = document.getElementById("ticker").value;
-  const year = parseInt(document.getElementById("year").value);
-  const net_income = parseFloat(document.getElementById("net_income").value);
-  const fcf = parseFloat(document.getElementById("fcf").value);
+  const tickerSelect = document.getElementById("tickerSelect");
+  const reportTableBody = document.getElementById("reportTableBody");
+  const saveReportBtn = document.getElementById("saveReportBtn");
+  const cancelEditBtn = document.getElementById("cancelEditBtn");
+  const formTitle = document.getElementById("formTitle");
 
-  const statusDiv = document.getElementById("statusMessage");
-  statusDiv.classList.remove("d-none", "text-success", "text-danger");
-  statusDiv.innerText = "Sedang mengirim data...";
+  const inputYear = document.getElementById("inputYear");
+  const inputNetIncome = document.getElementById("inputNetIncome");
+  const inputFCF = document.getElementById("inputFCF");
+  const editReportId = document.getElementById("editReportId");
 
-  try {
-    // Panggil endpoint FastAPI (Pastikan URL & Method sesuai)
-    const response = await fetch(`http://127.0.0.1:8000/tambah-laporan`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ticker, year, net_income, fcf }),
+  // --- 2. LOAD DAFTAR TICKER ---
+  async function loadTickers() {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/daftar-saham");
+      const data = await response.json();
+
+      tickerSelect.innerHTML = '<option value="">-- Pilih Ticker Saham --</option>';
+      data.forEach((saham) => {
+        tickerSelect.innerHTML += `<option value="${saham.ticker}">${saham.ticker} - ${saham.nama_emiten}</option>`;
+      });
+    } catch (error) {
+      console.error("Gagal load ticker:", error);
+    }
+  }
+  loadTickers();
+
+  // --- 3. LOAD LAPORAN SAAT TICKER DIPILIH ---
+  tickerSelect.addEventListener("change", async () => {
+    resetForm();
+    const ticker = tickerSelect.value;
+    if (!ticker) {
+      reportTableBody.innerHTML = '<tr><td colspan="4" class="text-muted">Pilih ticker untuk melihat data.</td></tr>';
+      return;
+    }
+
+    reportTableBody.innerHTML = '<tr><td colspan="4"><i class="fa fa-spinner fa-spin"></i> Memuat...</td></tr>';
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/laporan/${ticker}`);
+      if (!response.ok) throw new Error("Gagal ambil data");
+      const reports = await response.json();
+
+      if (reports.length === 0) {
+        reportTableBody.innerHTML = '<tr><td colspan="4" class="text-warning">Belum ada laporan untuk ticker ini.</td></tr>';
+        return;
+      }
+
+      // Render Tabel
+      reportTableBody.innerHTML = "";
+      reports.forEach((r) => {
+        reportTableBody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${r.year}</td>
+                        <td>${r.net_income.toLocaleString("id-ID")}</td>
+                        <td>${r.fcf.toLocaleString("id-ID")}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning edit-btn" data-id="${r.id}" data-year="${r.year}" data-ni="${r.net_income}" data-fcf="${r.fcf}"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${r.id}"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+      });
+
+      pasangEventTombol(); // Pasang event click untuk tombol edit & delete
+    } catch (error) {
+      reportTableBody.innerHTML = '<tr><td colspan="4" class="text-danger">Terjadi kesalahan koneksi.</td></tr>';
+    }
+  });
+
+  // --- 4. EVENT TOMBOL EDIT & DELETE ---
+  function pasangEventTombol() {
+    // Tombol Edit
+    document.querySelectorAll(".edit-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const target = e.currentTarget;
+        formTitle.innerText = "Edit Laporan (ID: " + target.dataset.id + ")";
+        formTitle.className = "text-warning mb-3";
+
+        editReportId.value = target.dataset.id;
+        inputYear.value = target.dataset.year;
+        inputNetIncome.value = target.dataset.ni;
+        inputFCF.value = target.dataset.fcf;
+
+        inputYear.readOnly = true; // Tahun biasanya tidak diubah
+        cancelEditBtn.classList.remove("d-none");
+      });
     });
 
-    const result = await response.json();
+    // Tombol Delete
+    document.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const reportId = e.currentTarget.dataset.id;
+        if (confirm("Yakin ingin menghapus laporan ini?")) {
+          await fetch(`http://127.0.0.1:8000/hapus-laporan/${reportId}`, { method: "DELETE" });
+          tickerSelect.dispatchEvent(new Event("change")); // Refresh tabel
+        }
+      });
+    });
+  }
 
-    if (response.ok) {
-      statusDiv.innerText = "✅ Sukses! Data berhasil masuk ke SQL.";
-      statusDiv.classList.add("text-success");
-      document.getElementById("adminForm").reset();
-    } else {
-      statusDiv.innerText = "❌ Gagal: " + result.error;
-      statusDiv.classList.add("text-danger");
+  // --- 5. SIMPAN (TAMBAH / EDIT) ---
+  saveReportBtn.addEventListener("click", async () => {
+    const ticker = tickerSelect.value;
+    if (!ticker) return alert("Pilih ticker dulu!");
+    if (!inputYear.value || !inputNetIncome.value || !inputFCF.value) return alert("Lengkapi data!");
+
+    const payload = {
+      ticker: ticker,
+      year: parseInt(inputYear.value),
+      net_income: parseFloat(inputNetIncome.value),
+      fcf: parseFloat(inputFCF.value),
+    };
+
+    const isEdit = editReportId.value !== "";
+    let url = "http://127.0.0.1:8000/tambah-laporan";
+    let method = "POST";
+
+    if (isEdit) {
+      url = `http://127.0.0.1:8000/edit-laporan/${editReportId.value}`;
+      method = "PUT";
     }
-  } catch (err) {
-    statusDiv.innerText = "❌ Error: Tidak bisa terhubung ke server.";
-    statusDiv.classList.add("text-danger");
-  }
-});
 
-document.addEventListener("DOMContentLoaded", () => {
-  // 1. Ambil data user dari localStorage (asumsi data login disimpan di sini)
-  const loggedInUser = JSON.parse(localStorage.getItem("user"));
+    saveReportBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Menyimpan...';
 
-  // 2. Cek apakah user sudah login dan apakah emailnya admin@gmail.com
-  if (!loggedInUser || loggedInUser.email !== "admin@gmail.com") {
-    alert("Akses Terlarang! Hanya Admin yang dapat mengakses halaman ini.");
-    window.location.href = "dashboard.html"; // Lempar balik ke dashboard
-  }
-});
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
 
-// Di admin.js
-async function loadTickers() {
-  const response = await fetch("http://127.0.0.1:8000/daftar-saham");
-  const stocks = await response.json();
-  const select = document.getElementById("ticker");
-
-  stocks.forEach((s) => {
-    let opt = document.createElement("option");
-    opt.value = s.ticker;
-    opt.innerHTML = `${s.ticker} - ${s.nama_emiten}`;
-    select.appendChild(opt);
+      if (response.ok) {
+        alert(data.message || "Berhasil!");
+        resetForm();
+        tickerSelect.dispatchEvent(new Event("change")); // Refresh tabel
+      } else {
+        alert(data.error || data.detail);
+      }
+    } catch (error) {
+      alert("Koneksi gagal.");
+    }
+    saveReportBtn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan Data';
   });
-}
-loadTickers();
+
+  // --- 6. BATAL EDIT ---
+  cancelEditBtn.addEventListener("click", resetForm);
+
+  function resetForm() {
+    formTitle.innerText = "Tambah Laporan Baru";
+    formTitle.className = "text-white mb-3";
+    editReportId.value = "";
+    inputYear.value = "";
+    inputNetIncome.value = "";
+    inputFCF.value = "";
+    inputYear.readOnly = false;
+    cancelEditBtn.classList.add("d-none");
+  }
+});

@@ -1,13 +1,28 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // --- 1. INISIALISASI & PROTEKSI ADMIN ---
-  const user = JSON.parse(localStorage.getItem("user"));
+  // --- 1. PROTEKSI HALAMAN DARI PENYUSUP ---
+  const isLoggedIn = localStorage.getItem("is_logged_in");
+  const userEmail = localStorage.getItem("user_email");
+
+  // Jika tidak ada tiket login, tendang ke halaman login
+  if (isLoggedIn !== "true" || !userEmail) {
+    alert("Akses Ditolak! Silakan login terlebih dahulu.");
+    window.location.href = "login.html";
+    return; // Hentikan semua script agar aman
+  }
+
+  // --- 2. INISIALISASI & PROTEKSI TOMBOL ADMIN ---
   const adminLink = document.getElementById("adminLink");
 
-  // Logika Munculkan Tombol Admin
-  if (user && user.email === "admin@gmail.com") {
-    if (adminLink) {
+  if (adminLink) {
+    // KUNCI 1: Paksa tombol sembunyi untuk SEMUA orang secara default
+    adminLink.style.display = "none";
+    adminLink.classList.add("d-none");
+
+    // KUNCI 2: Buka gembok HANYA jika emailnya tepat admin@gmail.com
+    if (userEmail === "karlferdinan1@gmail.com") {
+      adminLink.style.display = "inline-flex"; // Gunakan inline-flex agar sejajar
       adminLink.classList.remove("d-none");
-      console.log("Admin akses diberikan.");
+      console.log("Status: Admin VIP Dikenali. Tombol dimunculkan.");
     }
   }
 
@@ -16,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const dSearch = document.getElementById("desktopSearch");
   const mSearch = document.getElementById("mobileSearch");
 
-  // --- 2. FUNGSI LOAD DATA IHSG ---
+  // --- 3. FUNGSI LOAD DATA IHSG ---
   async function loadIHSG() {
     try {
       const response = await fetch("http://127.0.0.1:8000/ihsg-data");
@@ -44,7 +59,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // --- 3. RENDER CHART UTAMA (BESAR) ---
+  // --- 4. RENDER CHART UTAMA (BESAR) ---
   function renderIHSGMainChart(chartData, isUp) {
     const canvas = document.getElementById("ihsgMainChart");
     if (!canvas) return;
@@ -96,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Jalankan load IHSG saat startup
   loadIHSG();
 
-  // --- 4. LOGIKA DAFTAR SAHAM & SEARCH ---
+  // --- 5. LOGIKA DAFTAR SAHAM & SEARCH ---
   try {
     if (stockListContainer) {
       stockListContainer.innerHTML = '<p class="text-center py-4 text-muted">Memuat data dari server...</p>';
@@ -175,20 +190,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // --- LOGIKA LOGOUT ---
+  // --- 6. LOGIKA LOGOUT YANG BENAR ---
   const logoutBtn = document.querySelector(".logout-btn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", (e) => {
-      e.preventDefault(); // Mencegah pindah halaman instan
+      e.preventDefault();
 
-      // Hapus data user dari localStorage
-      localStorage.removeItem("user");
+      // Hapus data sesi dengan Key yang BENAR
+      localStorage.removeItem("is_logged_in");
+      localStorage.removeItem("user_email");
 
-      // Beri efek loading sebentar biar keren
       logoutBtn.innerHTML = '<i class="fa fa-spinner fa-spin text-danger"></i>';
 
       setTimeout(() => {
-        window.location.href = "login.html"; // Lempar balik ke login
+        window.location.href = "login.html";
       }, 800);
     });
   }
