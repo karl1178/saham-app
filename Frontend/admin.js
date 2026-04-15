@@ -24,9 +24,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       const response = await fetch("http://127.0.0.1:8000/daftar-saham");
       const data = await response.json();
 
-      tickerSelect.innerHTML = '<option value="">-- Pilih Ticker Saham --</option>';
+      // Setel warna dropdown utama ke putih agar kontras dengan background gelap
+      tickerSelect.style.color = "white";
+      tickerSelect.style.backgroundColor = "#212529"; // Warna gelap khas Bootstrap dark
+
+      // Placeholder "-- Pilih Ticker Saham --" tetap putih
+      tickerSelect.innerHTML = '<option value="" style="color: white; background-color: #212529;">-- Pilih Ticker Saham --</option>';
+
       data.forEach((saham) => {
-        tickerSelect.innerHTML += `<option value="${saham.ticker}">${saham.ticker} - ${saham.nama_emiten}</option>`;
+        // Daftar saham: Background gelap, teks putih
+        tickerSelect.innerHTML += `
+          <option value="${saham.ticker}" style="color: white; background-color: #212529;">
+            ${saham.ticker} - ${saham.nama_emiten}
+          </option>`;
       });
     } catch (error) {
       console.error("Gagal load ticker:", error);
