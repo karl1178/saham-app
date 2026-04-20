@@ -9,71 +9,200 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg fixed-top glass-nav">
       <div class="container-fluid px-4">
         <a class="navbar-brand brand-logo m-0" href="dashboard.html"> <i class="fa-solid fa-thumbs-up"></i> Saham Admin </a>
-        <a href="dashboard.html" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
+        <a href="dashboard.html" class="btn btn-outline-light btn-sm"> <i class="fa-solid fa-arrow-left"></i> Kembali </a>
       </div>
     </nav>
 
-    <div class="container mt-5 pt-5">
-      <div class="glass-card p-4">
-        <h3 class="mb-4 text-white"><i class="fa-solid fa-database text-primary"></i> Kelola Laporan Keuangan</h3>
+    <!-- Toast Container -->
+    <div id="toastContainer" style="position: fixed; top: 80px; right: 20px; z-index: 9999"></div>
 
-        <div class="row mb-4">
-          <div class="col-md-6">
-            <label class="form-label text-white">Pilih Ticker Saham:</label>
-            <select id="tickerSelect" class="form-select form-control-custom">
-              <option value="">-- Memuat Ticker... --</option>
-            </select>
+    <div class="container mt-5 pt-5">
+      <!-- TAB NAVIGATION -->
+      <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active text-white" id="laporan-tab" data-bs-toggle="tab" data-bs-target="#tab-laporan" type="button" role="tab"><i class="fa-solid fa-file-invoice text-primary"></i> Kelola Laporan Keuangan</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link text-white" id="ticker-tab" data-bs-toggle="tab" data-bs-target="#tab-ticker" type="button" role="tab"><i class="fa-solid fa-building-columns text-success"></i> Kelola Ticker Saham</button>
+        </li>
+      </ul>
+
+      <!-- TAB CONTENT -->
+      <div class="tab-content">
+        <!-- ========================================== -->
+        <!-- TAB 1: KELOLA LAPORAN KEUANGAN (LAMA)      -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade show active" id="tab-laporan" role="tabpanel">
+          <div class="glass-card p-4">
+            <h3 class="mb-4 text-white"><i class="fa-solid fa-database text-primary"></i> Kelola Laporan Keuangan</h3>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label class="form-label text-white">Pilih Ticker Saham:</label>
+                <select id="tickerSelect" class="form-select form-control-custom">
+                  <option value="">-- Memuat Ticker... --</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+              <table class="table table-dark table-hover table-bordered text-center align-middle">
+                <thead>
+                  <tr class="table-primary">
+                    <th>Tahun</th>
+                    <th>Net Income</th>
+                    <th>Free Cash Flow (FCF)</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                  <tr>
+                    <td colspan="4" class="text-muted">Pilih ticker untuk melihat data.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card bg-dark border-secondary p-3">
+              <h5 class="text-white mb-3" id="formTitle">Tambah Laporan Baru</h5>
+              <form id="reportForm" onsubmit="return false;">
+                <input type="hidden" id="editReportId" value="" />
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="text-white small">Tahun</label>
+                    <input type="number" id="inputYear" class="form-control" required />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="text-white small">Net Income</label>
+                    <input type="number" step="any" id="inputNetIncome" class="form-control" required />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="text-white small">Free Cash Flow</label>
+                    <input type="number" step="any" id="inputFCF" class="form-control" required />
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <button type="button" id="saveReportBtn" class="btn btn-primary px-4"><i class="fa-solid fa-save"></i> Simpan Data</button>
+                  <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none">Batal Edit</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
 
-        <div class="table-responsive mb-4">
-          <table class="table table-dark table-hover table-bordered text-center align-middle">
-            <thead>
-              <tr class="table-primary">
-                <th>Tahun</th>
-                <th>Net Income</th>
-                <th>Free Cash Flow (FCF)</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="reportTableBody">
-              <tr>
-                <td colspan="4" class="text-muted">Pilih ticker untuk melihat data.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <!-- ========================================== -->
+        <!-- TAB 2: KELOLA TICKER SAHAM (BARU)          -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade" id="tab-ticker" role="tabpanel">
+          <div class="glass-card p-4">
+            <h3 class="mb-4 text-white"><i class="fa-solid fa-building-columns text-success"></i> Kelola Ticker Saham</h3>
 
-        <div class="card bg-dark border-secondary p-3">
-          <h5 class="text-white mb-3" id="formTitle">Tambah Laporan Baru</h5>
-          <form id="reportForm" onsubmit="return false;">
-            <input type="hidden" id="editReportId" value="" />
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="text-white small">Tahun</label>
-                <input type="number" id="inputYear" class="form-control" required />
+            <!-- Tabel Daftar Ticker -->
+            <div class="table-responsive mb-4">
+              <table class="table table-dark table-hover table-bordered text-center align-middle">
+                <thead>
+                  <tr class="table-success text-dark">
+                    <th>Ticker</th>
+                    <th>Nama Emiten</th>
+                    <th>Sektor</th>
+                    <th>Shares Beredar</th>
+                    <th>Config Valuasi</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tickerListBody">
+                  <tr>
+                    <td colspan="6" class="text-muted">Memuat data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Form Tambah / Edit Ticker -->
+            <div class="card bg-dark border-secondary p-3" id="tickerFormCard">
+              <h5 class="text-white mb-3" id="tickerFormTitle">Tambah Ticker Baru</h5>
+              <input type="hidden" id="editTickerCode" value="" />
+
+              <div class="row g-3">
+                <!-- Kolom Kiri: Data Dasar -->
+                <div class="col-md-6">
+                  <h6 class="text-primary mb-3"><i class="fa-solid fa-circle-info"></i> Data Dasar</h6>
+
+                  <div class="mb-3">
+                    <label class="text-white small">Kode Ticker <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <input type="text" id="inputTickerBaru" class="form-control" placeholder="Contoh: BBCA" style="text-transform: uppercase" />
+                      <button class="btn btn-outline-info" id="cekSharesBtn" type="button"><i class="fa-solid fa-magnifying-glass"></i> Cek Shares</button>
+                    </div>
+                    <small class="text-muted">Klik "Cek Shares" untuk auto-fetch dari yfinance</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="text-white small">Nama Emiten <span class="text-danger">*</span></label>
+                    <input type="text" id="inputNamaEmiten" class="form-control" placeholder="Contoh: Bank Central Asia Tbk" />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="text-white small">Sektor <span class="text-danger">*</span></label>
+                    <select id="sektorSelect" class="form-select">
+                      <option value="">-- Memuat Sektor... --</option>
+                    </select>
+                    <small class="text-muted">Memilih sektor akan auto-isi config valuasi di bawah</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="text-white small">Jumlah Saham Beredar (Shares) <span class="text-danger">*</span></label>
+                    <input type="number" id="inputShares" class="form-control" placeholder="Contoh: 123275000000" />
+                  </div>
+                </div>
+
+                <!-- Kolom Kanan: Config Valuasi -->
+                <div class="col-md-6">
+                  <h6 class="text-warning mb-3"><i class="fa-solid fa-sliders"></i> Config Valuasi <span class="text-muted fw-normal small">(auto-isi dari sektor, bisa di-override)</span></h6>
+
+                  <div class="mb-3">
+                    <label class="text-white small">PER Standard</label>
+                    <input type="number" step="0.1" id="inputPER" class="form-control" placeholder="Contoh: 15" />
+                    <small class="text-muted">Price-to-Earnings Ratio rata-rata sektor</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="text-white small">Weight DCF <span class="text-muted">(0.0 – 1.0)</span></label>
+                    <input type="number" step="0.05" min="0" max="1" id="inputWeightDCF" class="form-control" placeholder="Contoh: 0.5" />
+                    <small class="text-muted">Bobot DCF dalam valuasi hybrid. Sisanya untuk PER.</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="text-white small">Max Growth Cap</label>
+                    <input type="number" step="0.01" id="inputMaxGrowth" class="form-control" placeholder="Contoh: 0.12 (= 12%)" />
+                    <small class="text-muted">Batas atas pertumbuhan FCF yang diizinkan</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="text-white small">Manual Growth Override <span class="text-muted">(opsional)</span></label>
+                    <input type="number" step="0.01" id="inputManualGrowth" class="form-control" placeholder="Kosongkan = hitung otomatis dari historis" />
+                    <small class="text-muted">Jika diisi, growth historis diabaikan dan nilai ini yang dipakai</small>
+                  </div>
+                </div>
               </div>
-              <div class="col-md-4">
-                <label class="text-white small">Net Income</label>
-                <input type="number" step="any" id="inputNetIncome" class="form-control" required />
-              </div>
-              <div class="col-md-4">
-                <label class="text-white small">Free Cash Flow</label>
-                <input type="number" step="any" id="inputFCF" class="form-control" required />
+
+              <div class="mt-3 d-flex gap-2">
+                <button type="button" id="saveTickerBtn" class="btn btn-success px-4"><i class="fa-solid fa-plus"></i> Simpan Ticker</button>
+                <button type="button" id="cancelEditTickerBtn" class="btn btn-secondary d-none"><i class="fa-solid fa-xmark"></i> Batal Edit</button>
               </div>
             </div>
-            <div class="mt-3">
-              <button type="button" id="saveReportBtn" class="btn btn-primary px-4"><i class="fa-solid fa-save"></i> Simpan Data</button>
-              <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none">Batal Edit</button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
+      <!-- end tab-content -->
     </div>
+    <!-- end container -->
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="admin.js"></script>
   </body>
 </html>

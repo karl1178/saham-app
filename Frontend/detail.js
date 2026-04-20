@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Inisialisasi Elemen UI berdasarkan ID di detail.html terbaru
+  // 1. Inisialisasi Elemen UI
   const favStar = document.getElementById("favStar");
   const stockCodeEl = document.getElementById("stockCode");
   const stockNameEl = document.getElementById("stockName");
@@ -15,6 +15,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const statGrowth = document.getElementById("statGrowth");
   const statYear = document.getElementById("statYear");
 
+  // === ELEMEN BARU: Sektor & Shares ===
+  const statSektor = document.getElementById("statSektor");
+  const statShares = document.getElementById("statShares");
+
   const badgeShort = document.getElementById("badgeShort");
   const badgeMid = document.getElementById("badgeMid");
   const badgeLong = document.getElementById("badgeLong");
@@ -22,23 +26,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = (urlParams.get("code") || "BBCA").toUpperCase();
 
-  // --- 2. LOGIKA SHARES (JUMLAH SAHAM BEREDAR) ---
-  const sharesMap = {
-    ASII: 40483000000,
-    BBCA: 123275000000,
-    BBRI: 151559000000,
-    TLKM: 99062000000,
-    UNTR: 3730000000,
-    ADRO: 31985000000,
-  };
-  const currentShares = sharesMap[code] || 1000000000;
-
-  // --- 3. LOAD DATA FUNDAMENTAL & REKOMENDASI ---
+  // --- 2. LOAD DATA FUNDAMENTAL & REKOMENDASI ---
+  // Shares sekarang diambil dari DB via API, tidak perlu sharesMap hardcode
   async function loadFundamental() {
     try {
       stockPriceEl.innerText = "Loading...";
 
-      const response = await fetch(`http://127.0.0.1:8000/rekomendasi/${code}?horizon=mid&shares=${currentShares}`);
+      // Tidak perlu kirim shares sebagai query param — backend ambil dari DB
+      const response = await fetch(`http://127.0.0.1:8000/rekomendasi/${code}?horizon=mid`);
       const data = await response.json();
 
       if (data.error) {
@@ -53,29 +48,35 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Header Info
       stockCodeEl.innerText = data.ticker;
       stockNameEl.innerText = data.name;
-      stockNameMobileEl.innerText = data.name;
+      if (stockNameMobileEl) stockNameMobileEl.innerText = data.name;
 
-      // Jika harga real-time tersedia di API, pakai itu
-      stockPriceEl.innerText = "Rp " + an.harga_pasar_saat_ini.toLocaleString("id-ID");
+      // Harga real-time
+      stockPriceEl.innerText = an.harga_pasar_saat_ini ? "Rp " + an.harga_pasar_saat_ini.toLocaleString("id-ID") : "N/A";
 
       // Badge Utama (Header)
       stockChangeBadge.innerText = an.rekomendasi_akhir;
       updateBadgeStyle(stockChangeBadge, an.rekomendasi_akhir);
 
-      // Valuasi Hybrid (Left Card)
+      // Valuasi Hybrid
       hargaWajarEl.innerText = "Rp " + an.harga_wajar_hybrid.toLocaleString("id-ID");
       mosValueEl.innerText = an.margin_of_safety;
 
-      // Fundamental Stats (Right Card)
+      // Fundamental Stats
       statNetIncome.innerText = "Rp " + raw.net_income.toLocaleString("id-ID");
       statFCF.innerText = "Rp " + raw.fcf.toLocaleString("id-ID");
       statGrowth.innerText = an.growth_digunakan;
       statYear.innerText = raw.year;
 
+      // === TAMPILKAN SEKTOR & SHARES (jika elemennya ada di HTML) ===
+      if (statSektor) statSektor.innerText = data.sektor || "-";
+      if (statShares) statShares.innerText = data.shares ? data.shares.toLocaleString("id-ID") : "-";
+
       // Tabel Rekomendasi (Short, Mid, Long)
       [badgeShort, badgeMid, badgeLong].forEach((badge) => {
-        badge.innerText = an.rekomendasi_akhir;
-        updateBadgeStyle(badge, an.rekomendasi_akhir, true);
+        if (badge) {
+          badge.innerText = an.rekomendasi_akhir;
+          updateBadgeStyle(badge, an.rekomendasi_akhir, true);
+        }
       });
     } catch (error) {
       console.error("Gagal konek ke backend fundamental:", error);
@@ -83,7 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // --- 4. LOAD DATA GRAFIK REAL-TIME (BARU) ---
+  // --- 3. LOAD DATA GRAFIK REAL-TIME ---
   async function loadChartData(range = "1d") {
     try {
       const response = await fetch(`http://127.0.0.1:8000/chart/${code}?range=${range}`);
@@ -95,34 +96,29 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const isUp = data.change >= 0;
-      // Panggil fungsi render menggunakan data ASLI dari API
       renderChart(data.chart, data.labels, isUp);
     } catch (error) {
       console.error("Gagal load grafik saham:", error);
     }
   }
 
-  // Jalankan kedua fungsi secara bersamaan saat halaman dimuat
   loadFundamental();
   loadChartData("1d");
 
-  // --- 5. EVENT LISTENER TOMBOL TIMEFRAME ---
+  // --- 4. EVENT LISTENER TOMBOL TIMEFRAME ---
   document.querySelectorAll(".chart-filter-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      // 1. Reset style semua tombol
       document.querySelectorAll(".chart-filter-btn").forEach((b) => {
         b.classList.remove("text-primary", "fw-bold");
         b.classList.add("text-muted");
       });
-      // 2. Aktifkan style tombol yang diklik
       e.target.classList.remove("text-muted");
       e.target.classList.add("text-primary", "fw-bold");
-      // 3. Panggil API dengan range baru
       loadChartData(e.target.dataset.range);
     });
   });
 
-  // --- 6. FUNGSI HELPER UI ---
+  // --- 5. FUNGSI HELPER UI ---
   function updateBadgeStyle(el, rekomendasi, isTable = false) {
     el.className = isTable ? "recommendation-badge" : "badge px-3 py-1";
     if (rekomendasi === "BUY") {
@@ -141,18 +137,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     gradient.addColorStop(0, `${chartColor}40`);
     gradient.addColorStop(1, `${chartColor}00`);
 
-    // Hapus grafik lama jika ada
     const existingChart = Chart.getChart("detailChart");
     if (existingChart) existingChart.destroy();
 
     new Chart(ctx, {
       type: "line",
       data: {
-        labels: labelsData, // Waktu dinamis dari Backend
+        labels: labelsData,
         datasets: [
           {
             label: code,
-            data: chartData, // Harga dinamis dari Backend
+            data: chartData,
             borderColor: chartColor,
             backgroundColor: gradient,
             borderWidth: 2,
@@ -193,7 +188,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // --- 7. LOGIKA FAVORITE ---
+  // --- 6. LOGIKA FAVORITE ---
   const favs = window.getFavorites ? window.getFavorites() : {};
   let favState = favs[code] || 0;
 
